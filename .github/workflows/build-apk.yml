@@ -4,16 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       release_action:
-        description: "Mevcut Release'i güncelle veya yeni sürüm yayınla"
+        description: "Derleme işlemini seç"
         required: true
         type: choice
-        default: update
+        default: test
         options:
+          - test
           - update
           - publish
       release_version:
-        description: "Sürüm numarası (ör. 2.0.0)"
-        required: true
+        description: "Release sürüm numarası (test için gerekli değil)"
+        required: false
         type: string
         default: "2.0.0"
 
@@ -28,6 +29,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Validate release selection
+        if: inputs.release_action != 'test'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ACTION: ${{ inputs.release_action }}
