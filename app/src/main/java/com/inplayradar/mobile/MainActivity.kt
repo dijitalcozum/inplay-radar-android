@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ).apply {
-            setMargins(dp(16), 0, dp(16), dp(32))
+            setMargins(0, 0, 0, dp(32))
         }
         content.addView(zoomPanel, zoomPanelParams)
         ViewCompat.setOnApplyWindowInsetsListener(content) { _, insets ->
@@ -220,7 +220,11 @@ class MainActivity : AppCompatActivity() {
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), 0, dp(18), 0)
+            val screenWidthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density
+            val horizontalPadding = if (screenWidthDp > 420f) {
+                dp(((screenWidthDp - 400f) / 2f).toInt())
+            } else dp(12)
+            setPadding(horizontalPadding, 0, horizontalPadding, 0)
             setBackgroundColor(Color.TRANSPARENT)
             visibility = View.GONE
         }
@@ -280,9 +284,9 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(8), 0, dp(8), 0)
             background = GradientDrawable().apply {
                 setColor(pillColor)
-                cornerRadius = dp(40).toFloat()
+                cornerRadius = dp(44).toFloat()
             }
-            elevation = dp(8).toFloat()
+            elevation = dp(4).toFloat()
         }
 
         fun zoomButton(label: String, change: Int): TextView =
@@ -350,7 +354,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setZoom(value: Int) {
         zoom = value.coerceIn(40, 200)
-        zoomSeekBar.progress = (zoom - 40) / 10
+        zoomSlider.value = ((zoom - 40) / 10).toFloat()
         updateZoomDisplay()
         applyZoom()
     }
