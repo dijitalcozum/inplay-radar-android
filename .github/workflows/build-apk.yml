@@ -4,22 +4,25 @@ on:
   workflow_dispatch:
     inputs:
       release_action:
-        description: "Derleme işlemini seç"
+        description: "Yapılacak işlemi seç"
         required: true
         type: choice
-        default: test
+        default: "Test et"
         options:
-          - test
-          - update
-          - publish
+          - "Test et"
+          - "Mevcut sürümü güncelle"
+          - "Yeni sürümü yayınla"
       release_version:
-        description: "Release sürüm numarası (test için gerekli değil)"
+        description: "Yalnızca yeni sürüm yayınlarken gir (ör. 2.1.0)"
         required: false
         type: string
-        default: "2.0.0"
 
 permissions:
   contents: write
+
+concurrency:
+  group: inplay-radar-manual-build
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -28,41 +31,78 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v7
 
-      - name: Validate release selection
-        if: inputs.release_action != 'test'
+      - name: Prepare version and validate selection
+        id: prepare
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ACTION: ${{ inputs.release_action }}
-          RELEASE_VERSION: ${{ inputs.release_version }}
+          INPUT_VERSION: ${{ inputs.release_version }}
         run: |
           set -euo pipefail
-          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format: $RELEASE_VERSION"
+
+          CURRENT_VERSION="$(sed -n 's/^[[:space:]]*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)"
+          CURRENT_CODE="$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\).*/\1/p' app/build.gradle.kts | head -n 1)"
+
+          if [[ -z "$CURRENT_VERSION" || -z "$CURRENT_CODE" ]]; then
+            echo "Could not read versionName/versionCode from app/build.gradle.kts."
             exit 1
           fi
 
-          APP_VERSION="$(sed -n 's/^[[:space:]]*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts)"
-          if [[ "$RELEASE_VERSION" != "$APP_VERSION" ]]; then
-            echo "Selected version ($RELEASE_VERSION) does not match app version ($APP_VERSION)."
-            exit 1
-          fi
+          case "$RELEASE_ACTION" in
+            "Test et")
+              RELEASE_VERSION="$CURRENT_VERSION"
+              NEXT_CODE="$CURRENT_CODE"
+              ;;
+            "Mevcut sürümü güncelle")
+              RELEASE_VERSION="$CURRENT_VERSION"
+              NEXT_CODE="$CURRENT_CODE"
+              gh release view "v$RELEASE_VERSION" >/dev/null
+              ;;
+            "Yeni sürümü yayınla")
+              if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "Geçerli bir sürüm numarası gir. Örnek: 2.1.0"
+                exit 1
+              fi
 
-          TAG="v$RELEASE_VERSION"
-          if [[ "$RELEASE_ACTION" == "update" ]]; then
-            gh release view "$TAG" >/dev/null
-          elif [[ "$RELEASE_ACTION" == "publish" ]]; then
-            if gh release view "$TAG" >/dev/null 2>&1; then
-              echo "Release $TAG already exists."
+              RELEASE_VERSION="$INPUT_VERSION"
+
+              if gh release view "v$RELEASE_VERSION" >/dev/null 2>&1; then
+                echo "v$RELEASE_VERSION Release zaten mevcut."
+                exit 1
+              fi
+              if git ls-remote --exit-code --tags origin "refs/tags/v$RELEASE_VERSION" >/dev/null 2>&1; then
+                echo "v$RELEASE_VERSION Git etiketi zaten mevcut."
+                exit 1
+              fi
+
+              if [[ "$RELEASE_VERSION" == "$CURRENT_VERSION" ]]; then
+                NEXT_CODE="$CURRENT_CODE"
+              else
+                NEXT_CODE="$((CURRENT_CODE + 1))"
+              fi
+
+              sed -i -E \
+                -e "s/^([[:space:]]*versionCode = )[0-9]+$/\1${NEXT_CODE}/" \
+                -e "s/^([[:space:]]*versionName = ")[^"]+("[[:space:]]*)$/\1${RELEASE_VERSION}\2/" \
+                app/build.gradle.kts
+
+              if ! git diff --quiet -- app/build.gradle.kts; then
+                git config user.name "github-actions[bot]"
+                git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                git add app/build.gradle.kts
+                git commit -m "Set app version to ${RELEASE_VERSION} (versionCode ${NEXT_CODE})"
+                git push origin HEAD:main
+              fi
+              ;;
+            *)
+              echo "Bilinmeyen işlem: $RELEASE_ACTION"
               exit 1
-            fi
-            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-              echo "Git tag $TAG already exists."
-              exit 1
-            fi
-          else
-            echo "Unknown release action: $RELEASE_ACTION"
-            exit 1
-          fi
+              ;;
+          esac
+
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_code=$NEXT_CODE" >> "$GITHUB_OUTPUT"
+          echo "Derlenecek sürüm: $RELEASE_VERSION (versionCode $NEXT_CODE)"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -109,18 +149,18 @@ jobs:
           retention-days: 14
 
       - name: Update existing Release
-        if: inputs.release_action == 'update'
+        if: inputs.release_action == 'Mevcut sürümü güncelle'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ inputs.release_version }}
+          tag_name: v${{ steps.prepare.outputs.release_version }}
           files: app/build/outputs/apk/debug/app-debug.apk
           fail_on_unmatched_files: true
 
       - name: Publish new Release
-        if: inputs.release_action == 'publish'
+        if: inputs.release_action == 'Yeni sürümü yayınla'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ inputs.release_version }}
+          tag_name: v${{ steps.prepare.outputs.release_version }}
           target_commitish: main
           files: app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
