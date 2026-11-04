@@ -359,7 +359,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleZoomPanelHide() {
         zoomHandler.removeCallbacks(hideZoomPanel)
-        zoomHandler.postDelayed(hideZoomPanel, 3000)
+        zoomHandler.postDelayed(hideZoomPanel, 5000)
     }
 
     private fun dp(value: Int): Int =
