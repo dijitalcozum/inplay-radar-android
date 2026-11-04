@@ -220,11 +220,16 @@ class MainActivity : AppCompatActivity() {
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val screenWidthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density
-            val horizontalPadding = if (screenWidthDp > 420f) {
-                dp(((screenWidthDp - 400f) / 2f).toInt())
-            } else dp(12)
-            setPadding(horizontalPadding, 0, horizontalPadding, 0)
+            val displayWidthPx = resources.displayMetrics.widthPixels
+            val density = resources.displayMetrics.density
+            val maxMobileWidth = (420f * density + 0.5f).toInt()
+            val maxContentWidth = (400f * density + 0.5f).toInt()
+            val defaultPadding = (12f * density + 0.5f).toInt()
+            val horizontalPadding = if (displayWidthPx > maxMobileWidth) {
+                (displayWidthPx - maxContentWidth) / 2
+            } else defaultPadding
+            setPadding(horizontalPadding, defaultPadding, horizontalPadding, defaultPadding)
+            clipToPadding = false
             setBackgroundColor(Color.TRANSPARENT)
             visibility = View.GONE
         }
@@ -250,8 +255,8 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.rgb(25, 25, 25))
             setTypeface(null, Typeface.NORMAL)
         }
-        zoomValue.setPadding(dp(12), 0, dp(12), 0)
-        header.addView(zoomValue, LinearLayout.LayoutParams(dp(72), dp(48)))
+        zoomValue.setPadding(dp(12), dp(12), dp(12), dp(12))
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(87), dp(48)))
 
         val divider = View(this).apply {
             setBackgroundColor(Color.rgb(218, 215, 224))
@@ -265,6 +270,7 @@ class MainActivity : AppCompatActivity() {
             setTextColor(chromeBlue)
             isClickable = true
             isFocusable = true
+            setPadding(dp(4), 0, dp(4), 0)
             setOnClickListener {
                 setZoom(100)
                 scheduleZoomPanelHide()
@@ -281,7 +287,6 @@ class MainActivity : AppCompatActivity() {
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), 0, dp(8), 0)
             background = GradientDrawable().apply {
                 setColor(pillColor)
                 cornerRadius = dp(44).toFloat()
@@ -333,11 +338,11 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-        controls.addView(zoomSlider, LinearLayout.LayoutParams(0, dp(48), 1f))
+        controls.addView(zoomSlider, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(48)))
         panel.addView(
             controls,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dp(8)
             }
         )
