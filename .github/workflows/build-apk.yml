@@ -81,10 +81,33 @@ jobs:
                 NEXT_CODE="$((CURRENT_CODE + 1))"
               fi
 
-              sed -i -E \
-                -e "s/^([[:space:]]*versionCode = )[0-9]+$/\1${NEXT_CODE}/" \
-                -e "s/^([[:space:]]*versionName = ")[^"]+("[[:space:]]*)$/\1${RELEASE_VERSION}\2/" \
-                app/build.gradle.kts
+              python3 - "$RELEASE_VERSION" "$NEXT_CODE" <<'PY'
+              from pathlib import Path
+              import re
+              import sys
+
+              path = Path("app/build.gradle.kts")
+              release_version, next_code = sys.argv[1], sys.argv[2]
+              content = path.read_text()
+
+              content, code_count = re.subn(
+                  r'(?m)^(\\s*versionCode\\s*=\\s*)[0-9]+\\s*$',
+                  lambda match: f"{match.group(1)}{next_code}",
+                  content,
+              )
+              content, name_count = re.subn(
+                  r'(?m)^(\\s*versionName\\s*=\\s*)"[^"]*"\\s*$',
+                  lambda match: f'{match.group(1)}"{release_version}"',
+                  content,
+              )
+
+              if code_count != 1 or name_count != 1:
+                  raise SystemExit(
+                      f"Expected one versionCode and versionName; found {code_count} and {name_count}."
+                  )
+
+              path.write_text(content)
+              PY
 
               if ! git diff --quiet -- app/build.gradle.kts; then
                 git config user.name "github-actions[bot]"
