@@ -17,6 +17,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
@@ -123,7 +124,10 @@ class MainActivity : AppCompatActivity() {
         refresh.setOnChildScrollUpCallback { _, _ -> web.scrollY > 0 }
         refresh.setOnRefreshListener { web.reload() }
         refresh.addView(web, ViewGroup.LayoutParams(-1, -1))
-        drawer.addView(refresh, DrawerLayout.LayoutParams(-1, -1))
+
+        val content = FrameLayout(this)
+        content.addView(refresh, FrameLayout.LayoutParams(-1, -1))
+        drawer.addView(content, DrawerLayout.LayoutParams(-1, -1))
 
         val drawerPanel = buildDrawer()
         val drawerParams = DrawerLayout.LayoutParams(dp(288), -1).apply {
@@ -132,14 +136,14 @@ class MainActivity : AppCompatActivity() {
         drawer.addView(drawerPanel, drawerParams)
 
         zoomPanel = buildZoomPanel()
-        val zoomPanelParams = DrawerLayout.LayoutParams(
+        val zoomPanelParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             setMargins(dp(16), 0, dp(16), dp(24))
         }
-        drawer.addView(zoomPanel, zoomPanelParams)
+        content.addView(zoomPanel, zoomPanelParams)
 
         setContentView(drawer)
         web.loadUrl(homeUrl)
@@ -170,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         item("Ana Sayfa") { web.loadUrl(homeUrl) }
-        item("Yakınlaştırma") { showZoomPanel() }
+        item("Yakınlaştır") { showZoomPanel() }
         item("Tam ekran") {
             val immersive =
                 (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) == 0
