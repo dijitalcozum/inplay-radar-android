@@ -11,6 +11,8 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -144,6 +146,15 @@ class MainActivity : AppCompatActivity() {
             setMargins(dp(16), 0, dp(16), dp(24))
         }
         content.addView(zoomPanel, zoomPanelParams)
+        ViewCompat.setOnApplyWindowInsetsListener(content) { _, insets ->
+            val navigationBarHeight =
+                insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            val params = zoomPanel.layoutParams as FrameLayout.LayoutParams
+            params.bottomMargin = navigationBarHeight + dp(24)
+            zoomPanel.layoutParams = params
+            insets
+        }
+        ViewCompat.requestApplyInsets(content)
 
         setContentView(drawer)
         web.loadUrl(homeUrl)
@@ -208,33 +219,42 @@ class MainActivity : AppCompatActivity() {
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(12), dp(18), dp(10))
-            background = GradientDrawable().apply {
-                setColor(Color.WHITE)
-                cornerRadius = dp(18).toFloat()
-            }
-            elevation = dp(12).toFloat()
+            setPadding(dp(18), 0, dp(18), 0)
+            setBackgroundColor(Color.TRANSPARENT)
             visibility = View.GONE
         }
 
+        val pillColor = Color.rgb(250, 248, 253)
+
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                setColor(pillColor)
+                cornerRadius = dp(40).toFloat()
+            }
+            elevation = dp(8).toFloat()
         }
 
         zoomValue = TextView(this).apply {
             text = "$zoom%"
             textSize = 17f
-            setTextColor(Color.rgb(35, 35, 35))
-            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(25, 25, 25))
+            setTypeface(null, Typeface.NORMAL)
         }
-        header.addView(zoomValue, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(74), dp(54)))
+
+        val divider = View(this).apply {
+            setBackgroundColor(Color.rgb(218, 215, 224))
+        }
+        header.addView(divider, LinearLayout.LayoutParams(dp(1), dp(54)))
 
         val reset = TextView(this).apply {
             text = "Sıfırla"
-            textSize = 14f
-            setTextColor(Color.rgb(25, 105, 190))
-            setPadding(dp(12), dp(8), dp(4), dp(8))
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(66, 133, 244))
             isClickable = true
             isFocusable = true
             setOnClickListener {
@@ -242,20 +262,31 @@ class MainActivity : AppCompatActivity() {
                 scheduleZoomPanelHide()
             }
         }
-        header.addView(reset, LinearLayout.LayoutParams(-2, -2))
-        panel.addView(header, LinearLayout.LayoutParams(-1, -2))
+        header.addView(reset, LinearLayout.LayoutParams(dp(96), dp(54)))
+        panel.addView(
+            header,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(54)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        )
 
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), 0, dp(8), 0)
+            background = GradientDrawable().apply {
+                setColor(pillColor)
+                cornerRadius = dp(40).toFloat()
+            }
+            elevation = dp(8).toFloat()
         }
 
         fun zoomButton(label: String, change: Int): TextView =
             TextView(this).apply {
                 text = label
-                textSize = 25f
+                textSize = 29f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(45, 45, 45))
+                setTextColor(Color.BLACK)
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
@@ -264,7 +295,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(40), dp(44)))
+        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(48), dp(54)))
 
         zoomSeekBar = SeekBar(this).apply {
             max = 16
@@ -288,9 +319,14 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(44), 1f))
-        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(40), dp(44)))
-        panel.addView(controls, LinearLayout.LayoutParams(-1, -2))
+        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(54), 1f))
+        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(54)))
+        panel.addView(
+            controls,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)).apply {
+                topMargin = dp(8)
+            }
+        )
 
         return panel
     }
