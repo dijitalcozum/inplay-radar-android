@@ -83,30 +83,33 @@ jobs:
 
               python3 - "$RELEASE_VERSION" "$NEXT_CODE" <<'PY'
               from pathlib import Path
-              import re
               import sys
 
               path = Path("app/build.gradle.kts")
               release_version, next_code = sys.argv[1], sys.argv[2]
-              content = path.read_text()
+              lines = path.read_text().splitlines()
 
-              content, code_count = re.subn(
-                  r'(?m)^(\\s*versionCode\\s*=\\s*)[0-9]+\\s*$',
-                  lambda match: f"{match.group(1)}{next_code}",
-                  content,
-              )
-              content, name_count = re.subn(
-                  r'(?m)^(\\s*versionName\\s*=\\s*)"[^"]*"\\s*$',
-                  lambda match: f'{match.group(1)}"{release_version}"',
-                  content,
-              )
+              code_indexes = [
+                  index for index, line in enumerate(lines)
+                  if line.strip().startswith("versionCode =")
+              ]
+              name_indexes = [
+                  index for index, line in enumerate(lines)
+                  if line.strip().startswith("versionName =")
+              ]
 
-              if code_count != 1 or name_count != 1:
+              if len(code_indexes) != 1 or len(name_indexes) != 1:
                   raise SystemExit(
-                      f"Expected one versionCode and versionName; found {code_count} and {name_count}."
+                      f"Expected one versionCode and versionName; found {len(code_indexes)} and {len(name_indexes)}."
                   )
 
-              path.write_text(content)
+              code_index = code_indexes[0]
+              name_index = name_indexes[0]
+              code_indent = lines[code_index][:len(lines[code_index]) - len(lines[code_index].lstrip())]
+              name_indent = lines[name_index][:len(lines[name_index]) - len(lines[name_index].lstrip())]
+              lines[code_index] = f"{code_indent}versionCode = {next_code}"
+              lines[name_index] = f'{name_indent}versionName = "{release_version}"'
+              path.write_text("\\n".join(lines) + "\\n")
               PY
 
               if ! git diff --quiet -- app/build.gradle.kts; then
