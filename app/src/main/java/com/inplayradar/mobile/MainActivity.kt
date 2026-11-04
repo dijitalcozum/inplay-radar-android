@@ -1,7 +1,6 @@
 package com.inplayradar.mobile
 
 import android.annotation.SuppressLint
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -22,7 +21,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import com.google.android.material.slider.Slider
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -37,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private lateinit var zoomPanel: LinearLayout
     private lateinit var zoomValue: TextView
-    private lateinit var zoomSlider: Slider
+    private lateinit var zoomSeekBar: SeekBar
     private val homeUrl = "http://inplayradar.com/login/"
     private var zoom = 100
     private val zoomHandler = Handler(Looper.getMainLooper())
@@ -144,7 +143,7 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ).apply {
-            setMargins(0, 0, 0, dp(32))
+            setMargins(dp(16), 0, dp(16), dp(32))
         }
         content.addView(zoomPanel, zoomPanelParams)
         ViewCompat.setOnApplyWindowInsetsListener(content) { _, insets ->
@@ -220,32 +219,21 @@ class MainActivity : AppCompatActivity() {
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val displayWidthPx = resources.displayMetrics.widthPixels
-            val density = resources.displayMetrics.density
-            val maxMobileWidth = (420f * density + 0.5f).toInt()
-            val maxContentWidth = (400f * density + 0.5f).toInt()
-            val defaultPadding = (12f * density + 0.5f).toInt()
-            val horizontalPadding = if (displayWidthPx > maxMobileWidth) {
-                (displayWidthPx - maxContentWidth) / 2
-            } else defaultPadding
-            setPadding(horizontalPadding, defaultPadding, horizontalPadding, defaultPadding)
-            clipToPadding = false
+            setPadding(dp(18), 0, dp(18), 0)
             setBackgroundColor(Color.TRANSPARENT)
             visibility = View.GONE
         }
 
         val pillColor = Color.rgb(250, 248, 253)
-        val chromeBlue = Color.rgb(66, 133, 244)
-        val chromeInactiveTrack = Color.rgb(205, 220, 250)
 
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 setColor(pillColor)
-                cornerRadius = dp(44).toFloat()
+                cornerRadius = dp(40).toFloat()
             }
-            elevation = dp(4).toFloat()
+            elevation = dp(8).toFloat()
         }
 
         zoomValue = TextView(this).apply {
@@ -255,8 +243,7 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.rgb(25, 25, 25))
             setTypeface(null, Typeface.NORMAL)
         }
-        zoomValue.setPadding(dp(12), dp(12), dp(12), dp(12))
-        header.addView(zoomValue, LinearLayout.LayoutParams(dp(87), dp(48)))
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(68), dp(48)))
 
         val divider = View(this).apply {
             setBackgroundColor(Color.rgb(218, 215, 224))
@@ -267,10 +254,9 @@ class MainActivity : AppCompatActivity() {
             text = "Sıfırla"
             textSize = 16f
             gravity = Gravity.CENTER
-            setTextColor(chromeBlue)
+            setTextColor(Color.rgb(66, 133, 244))
             isClickable = true
             isFocusable = true
-            setPadding(dp(4), 0, dp(4), 0)
             setOnClickListener {
                 setZoom(100)
                 scheduleZoomPanelHide()
@@ -287,11 +273,12 @@ class MainActivity : AppCompatActivity() {
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), 0, dp(8), 0)
             background = GradientDrawable().apply {
                 setColor(pillColor)
-                cornerRadius = dp(44).toFloat()
+                cornerRadius = dp(40).toFloat()
             }
-            elevation = dp(4).toFloat()
+            elevation = dp(8).toFloat()
         }
 
         fun zoomButton(label: String, change: Int): TextView =
@@ -308,41 +295,35 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(48), dp(48)))
+        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(44), dp(48)))
 
-        zoomSlider = Slider(this).apply {
-            valueFrom = 0f
-            valueTo = 16f
-            stepSize = 1f
-            value = ((zoom - 40) / 10).toFloat()
-            setTrackHeight(dp(10))
-            setTrackActiveTintList(ColorStateList.valueOf(chromeBlue))
-            setTrackInactiveTintList(ColorStateList.valueOf(chromeInactiveTrack))
-            setThumbTintList(ColorStateList.valueOf(chromeBlue))
-            setHaloTintList(ColorStateList.valueOf(0x334285F4))
-            addOnChangeListener { _, value, fromUser ->
-                if (fromUser) {
-                    zoom = 40 + value.toInt() * 10
-                    updateZoomDisplay()
-                    applyZoom()
-                    scheduleZoomPanelHide()
+        zoomSeekBar = SeekBar(this).apply {
+            max = 16
+            progress = (zoom - 40) / 10
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        zoom = 40 + progress * 10
+                        updateZoomDisplay()
+                        applyZoom()
+                        scheduleZoomPanelHide()
+                    }
                 }
-            }
-            addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-                override fun onStartTrackingTouch(slider: Slider) {
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {
                     zoomHandler.removeCallbacks(hideZoomPanel)
                 }
 
-                override fun onStopTrackingTouch(slider: Slider) {
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
                     scheduleZoomPanelHide()
                 }
             })
         }
-        controls.addView(zoomSlider, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(48)))
+        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(48), 1f))
+        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(54)))
         panel.addView(
             controls,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
                 topMargin = dp(8)
             }
         )
@@ -351,7 +332,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showZoomPanel() {
-        zoomSlider.value = ((zoom - 40) / 10).toFloat()
+        zoomSeekBar.progress = (zoom - 40) / 10
         updateZoomDisplay()
         zoomPanel.visibility = View.VISIBLE
         scheduleZoomPanelHide()
@@ -359,7 +340,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setZoom(value: Int) {
         zoom = value.coerceIn(40, 200)
-        zoomSlider.value = ((zoom - 40) / 10).toFloat()
+        zoomSeekBar.progress = (zoom - 40) / 10
         updateZoomDisplay()
         applyZoom()
     }
@@ -378,7 +359,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleZoomPanelHide() {
         zoomHandler.removeCallbacks(hideZoomPanel)
-        zoomHandler.postDelayed(hideZoomPanel, 5000)
+        zoomHandler.postDelayed(hideZoomPanel, 3000)
     }
 
     private fun dp(value: Int): Int =
