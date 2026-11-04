@@ -109,7 +109,7 @@ jobs:
               name_indent = lines[name_index][:len(lines[name_index]) - len(lines[name_index].lstrip())]
               lines[code_index] = f"{code_indent}versionCode = {next_code}"
               lines[name_index] = f'{name_indent}versionName = "{release_version}"'
-              path.write_text("\\n".join(lines) + "\\n")
+              path.write_text(chr(10).join(lines) + chr(10))
               PY
 
               if ! git diff --quiet -- app/build.gradle.kts; then
