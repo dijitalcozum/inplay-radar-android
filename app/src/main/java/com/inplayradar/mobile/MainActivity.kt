@@ -143,14 +143,14 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ).apply {
-            setMargins(dp(16), 0, dp(16), dp(24))
+            setMargins(dp(16), 0, dp(16), dp(32))
         }
         content.addView(zoomPanel, zoomPanelParams)
         ViewCompat.setOnApplyWindowInsetsListener(content) { _, insets ->
             val navigationBarHeight =
                 insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
             val params = zoomPanel.layoutParams as FrameLayout.LayoutParams
-            params.bottomMargin = navigationBarHeight + dp(24)
+            params.bottomMargin = navigationBarHeight + dp(32)
             zoomPanel.layoutParams = params
             insets
         }
@@ -243,12 +243,12 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.rgb(25, 25, 25))
             setTypeface(null, Typeface.NORMAL)
         }
-        header.addView(zoomValue, LinearLayout.LayoutParams(dp(74), dp(54)))
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(68), dp(48)))
 
         val divider = View(this).apply {
             setBackgroundColor(Color.rgb(218, 215, 224))
         }
-        header.addView(divider, LinearLayout.LayoutParams(dp(1), dp(54)))
+        header.addView(divider, LinearLayout.LayoutParams(dp(1), dp(48)))
 
         val reset = TextView(this).apply {
             text = "Sıfırla"
@@ -262,10 +262,10 @@ class MainActivity : AppCompatActivity() {
                 scheduleZoomPanelHide()
             }
         }
-        header.addView(reset, LinearLayout.LayoutParams(dp(96), dp(54)))
+        header.addView(reset, LinearLayout.LayoutParams(dp(87), dp(48)))
         panel.addView(
             header,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(54)).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
             }
         )
@@ -295,7 +295,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(48), dp(54)))
+        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(44), dp(48)))
 
         zoomSeekBar = SeekBar(this).apply {
             max = 16
@@ -319,11 +319,11 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(54), 1f))
+        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(48), 1f))
         controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(54)))
         panel.addView(
             controls,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
                 topMargin = dp(8)
             }
         )
