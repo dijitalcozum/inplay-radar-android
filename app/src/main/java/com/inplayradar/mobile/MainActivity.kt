@@ -1,6 +1,7 @@
 package com.inplayradar.mobile
 
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -21,7 +22,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.SeekBar
+import com.google.android.material.slider.Slider
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -36,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private lateinit var zoomPanel: LinearLayout
     private lateinit var zoomValue: TextView
-    private lateinit var zoomSeekBar: SeekBar
+    private lateinit var zoomSlider: Slider
     private val homeUrl = "http://inplayradar.com/login/"
     private var zoom = 100
     private val zoomHandler = Handler(Looper.getMainLooper())
@@ -225,15 +226,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         val pillColor = Color.rgb(250, 248, 253)
+        val chromeBlue = Color.rgb(66, 133, 244)
+        val chromeInactiveTrack = Color.rgb(205, 220, 250)
 
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 setColor(pillColor)
-                cornerRadius = dp(40).toFloat()
+                cornerRadius = dp(44).toFloat()
             }
-            elevation = dp(8).toFloat()
+            elevation = dp(4).toFloat()
         }
 
         zoomValue = TextView(this).apply {
@@ -243,7 +246,8 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.rgb(25, 25, 25))
             setTypeface(null, Typeface.NORMAL)
         }
-        header.addView(zoomValue, LinearLayout.LayoutParams(dp(68), dp(48)))
+        zoomValue.setPadding(dp(12), 0, dp(12), 0)
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(72), dp(48)))
 
         val divider = View(this).apply {
             setBackgroundColor(Color.rgb(218, 215, 224))
@@ -254,7 +258,7 @@ class MainActivity : AppCompatActivity() {
             text = "Sıfırla"
             textSize = 16f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(66, 133, 244))
+            setTextColor(chromeBlue)
             isClickable = true
             isFocusable = true
             setOnClickListener {
@@ -295,32 +299,38 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(44), dp(48)))
+        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        zoomSeekBar = SeekBar(this).apply {
-            max = 16
-            progress = (zoom - 40) / 10
-            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        zoom = 40 + progress * 10
-                        updateZoomDisplay()
-                        applyZoom()
-                        scheduleZoomPanelHide()
-                    }
+        zoomSlider = Slider(this).apply {
+            valueFrom = 0f
+            valueTo = 16f
+            stepSize = 1f
+            value = ((zoom - 40) / 10).toFloat()
+            setTrackHeight(dp(10))
+            setTrackActiveTintList(ColorStateList.valueOf(chromeBlue))
+            setTrackInactiveTintList(ColorStateList.valueOf(chromeInactiveTrack))
+            setThumbTintList(ColorStateList.valueOf(chromeBlue))
+            setHaloTintList(ColorStateList.valueOf(0x334285F4))
+            addOnChangeListener { _, value, fromUser ->
+                if (fromUser) {
+                    zoom = 40 + value.toInt() * 10
+                    updateZoomDisplay()
+                    applyZoom()
+                    scheduleZoomPanelHide()
                 }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+            addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {
                     zoomHandler.removeCallbacks(hideZoomPanel)
                 }
 
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                override fun onStopTrackingTouch(slider: Slider) {
                     scheduleZoomPanelHide()
                 }
             })
         }
-        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(48), 1f))
-        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(54)))
+        controls.addView(zoomSlider, LinearLayout.LayoutParams(0, dp(48), 1f))
+        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(48)))
         panel.addView(
             controls,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
@@ -332,7 +342,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showZoomPanel() {
-        zoomSeekBar.progress = (zoom - 40) / 10
+        zoomSlider.value = ((zoom - 40) / 10).toFloat()
         updateZoomDisplay()
         zoomPanel.visibility = View.VISIBLE
         scheduleZoomPanelHide()
@@ -359,7 +369,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleZoomPanelHide() {
         zoomHandler.removeCallbacks(hideZoomPanel)
-        zoomHandler.postDelayed(hideZoomPanel, 3000)
+        zoomHandler.postDelayed(hideZoomPanel, 5000)
     }
 
     private fun dp(value: Int): Int =
