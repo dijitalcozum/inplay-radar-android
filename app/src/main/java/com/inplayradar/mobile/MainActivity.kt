@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zoomPanel: LinearLayout
     private lateinit var zoomValue: TextView
     private lateinit var zoomSeekBar: SeekBar
-    private val homeUrl = "http://inplayradar.com/login/"
+    private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
     private var zoom = 100
     private val zoomHandler = Handler(Looper.getMainLooper())
     private val hideZoomPanel = Runnable {
