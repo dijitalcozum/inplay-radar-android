@@ -20,6 +20,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.ScrollView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
@@ -163,9 +165,10 @@ class MainActivity : AppCompatActivity() {
     private fun buildDrawer(): LinearLayout {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(38), dp(16), dp(20))
+            setPadding(dp(16), dp(34), dp(16), dp(18))
             background = GradientDrawable().apply {
                 setColor(Color.rgb(58, 61, 69))
+                setStroke(dp(1), Color.rgb(105, 112, 125))
                 cornerRadius = dp(18).toFloat()
             }
             elevation = dp(12).toFloat()
@@ -174,14 +177,21 @@ class MainActivity : AppCompatActivity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), dp(4), dp(4), dp(18))
+            setPadding(dp(4), 0, dp(2), dp(10))
         }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.mipmap.ic_launcher)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        header.addView(logo, LinearLayout.LayoutParams(dp(42), dp(42)))
 
         val title = TextView(this).apply {
             text = "Inplay Radar"
-            textSize = 22f
+            textSize = 21f
             setTextColor(Color.WHITE)
             setTypeface(null, Typeface.BOLD)
+            setPadding(dp(10), 0, 0, 0)
         }
         header.addView(title, LinearLayout.LayoutParams(0, dp(48), 1f))
 
@@ -194,54 +204,97 @@ class MainActivity : AppCompatActivity() {
             isFocusable = true
             setOnClickListener { drawer.closeDrawer(Gravity.START) }
         }
-        header.addView(close, LinearLayout.LayoutParams(dp(44), dp(48)))
-        box.addView(header)
+        header.addView(close, LinearLayout.LayoutParams(dp(40), dp(48)))
+        box.addView(header, LinearLayout.LayoutParams(-1, dp(58)))
 
         fun divider(): View = View(this).apply {
             setBackgroundColor(Color.rgb(112, 119, 132))
         }
+
         box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-            bottomMargin = dp(16)
+            bottomMargin = dp(12)
         })
 
-        fun item(label: String, icon: String, selected: Boolean = false, action: () -> Unit) {
+        val scrollView = ScrollView(this).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+        }
+
+        val itemsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        scrollView.addView(
+            itemsContainer,
+            ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+        box.addView(scrollView, LinearLayout.LayoutParams(-1, 0, 1f))
+
+        val menuRows = linkedMapOf<String, LinearLayout>()
+        var selectedMenu = "Ana Sayfa"
+
+        fun itemBackground(selected: Boolean): GradientDrawable =
+            GradientDrawable().apply {
+                setColor(
+                    if (selected) Color.rgb(0, 105, 230) else Color.TRANSPARENT
+                )
+                cornerRadius = dp(11).toFloat()
+            }
+
+        fun updateSelection(label: String) {
+            selectedMenu = label
+            menuRows.forEach { (name, row) ->
+                row.background = itemBackground(name == selectedMenu)
+            }
+        }
+
+        fun item(label: String, icon: String, action: () -> Unit) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(14), 0, dp(12), 0)
-                background = GradientDrawable().apply {
-                    setColor(if (selected) Color.rgb(0, 105, 230) else Color.TRANSPARENT)
-                    cornerRadius = dp(12).toFloat()
-                }
+                setPadding(dp(10), 0, dp(10), 0)
+                background = itemBackground(label == selectedMenu)
                 isClickable = true
                 isFocusable = true
-                setOnClickListener {
-                    action()
-                    drawer.closeDrawer(Gravity.START)
-                }
             }
 
             val iconView = TextView(this).apply {
                 text = icon
-                textSize = 23f
+                textSize = 22f
                 gravity = Gravity.CENTER
                 setTextColor(Color.WHITE)
             }
-            row.addView(iconView, LinearLayout.LayoutParams(dp(42), dp(48)))
+            row.addView(iconView, LinearLayout.LayoutParams(dp(42), -1))
 
-            val text = TextView(this).apply {
+            val labelView = TextView(this).apply {
                 text = label
                 textSize = 16f
                 setTextColor(Color.WHITE)
-                setPadding(dp(12), 0, 0, 0)
+                setPadding(dp(10), 0, 0, 0)
+                gravity = Gravity.CENTER_VERTICAL
+                maxLines = 1
             }
-            row.addView(text, LinearLayout.LayoutParams(0, dp(48), 1f))
-            box.addView(row, LinearLayout.LayoutParams(-1, dp(48)).apply {
-                bottomMargin = dp(5)
-            })
+            row.addView(labelView, LinearLayout.LayoutParams(0, -1, 1f))
+
+            row.setOnClickListener {
+                updateSelection(label)
+                action()
+                drawer.closeDrawer(Gravity.START)
+            }
+
+            menuRows[label] = row
+            itemsContainer.addView(
+                row,
+                LinearLayout.LayoutParams(-1, dp(50)).apply {
+                    bottomMargin = dp(4)
+                }
+            )
         }
 
-        item("Ana Sayfa", "⌂", true) { web.loadUrl(homeUrl) }
+        item("Ana Sayfa", "⌂") { web.loadUrl(homeUrl) }
         item("Canlı", "◉") {
             web.loadUrl("https://inplayflux.com/live-scanner?page=live")
         }
@@ -251,13 +304,13 @@ class MainActivity : AppCompatActivity() {
         item("Favorilerim", "☆") {
             web.loadUrl("https://inplayflux.com/live-scanner?page=favorim&lang=tr")
         }
-        item("Stratejilerim", "▣") {
+        item("Stratejilerim", "⚙") {
             web.loadUrl("https://inplayflux.com/stratejiler")
         }
         item("Sinyaller", "⌁") {
             web.loadUrl("https://inplayflux.com/stratejiler/sinyaller")
         }
-        item("Nasıl Kullanılır", "?") {
+        item("SSS", "?") {
             web.loadUrl("https://inplayflux.com/page/how-to-use")
         }
         item("Ayarlar", "⚙") {
@@ -277,7 +330,7 @@ class MainActivity : AppCompatActivity() {
 
         box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
             topMargin = dp(12)
-            bottomMargin = dp(14)
+            bottomMargin = dp(12)
         })
 
         val controls = LinearLayout(this).apply {
@@ -289,7 +342,7 @@ class MainActivity : AppCompatActivity() {
             val button = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(dp(4), dp(8), dp(4), dp(8))
+                setPadding(dp(4), dp(7), dp(4), dp(7))
                 background = GradientDrawable().apply {
                     setColor(Color.rgb(63, 67, 77))
                     setStroke(dp(1), Color.rgb(105, 112, 125))
@@ -302,23 +355,30 @@ class MainActivity : AppCompatActivity() {
                     drawer.closeDrawer(Gravity.START)
                 }
             }
+
             val iconView = TextView(this).apply {
                 text = icon
-                textSize = 25f
+                textSize = 24f
                 gravity = Gravity.CENTER
                 setTextColor(Color.WHITE)
             }
-            button.addView(iconView)
-            val text = TextView(this).apply {
+            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(34)))
+
+            val labelView = TextView(this).apply {
                 text = label
                 textSize = 13f
                 gravity = Gravity.CENTER
                 setTextColor(Color.WHITE)
+                maxLines = 1
             }
-            button.addView(text)
-            controls.addView(button, LinearLayout.LayoutParams(0, dp(76), 1f).apply {
-                if (controls.childCount > 0) leftMargin = dp(8)
-            })
+            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(22)))
+
+            controls.addView(
+                button,
+                LinearLayout.LayoutParams(0, dp(72), 1f).apply {
+                    if (controls.childCount > 0) leftMargin = dp(8)
+                }
+            )
         }
 
         control("Yakınlaştır", "⌕") { showZoomPanel() }
@@ -335,7 +395,8 @@ class MainActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             }
         }
-        box.addView(controls, LinearLayout.LayoutParams(-1, dp(76)))
+
+        box.addView(controls, LinearLayout.LayoutParams(-1, dp(72)))
         return box
     }
 
