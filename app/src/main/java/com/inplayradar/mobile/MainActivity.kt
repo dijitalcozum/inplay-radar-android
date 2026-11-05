@@ -163,17 +163,56 @@ class MainActivity : AppCompatActivity() {
     private fun buildDrawer(): LinearLayout {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(42), dp(16), dp(20))
-            setBackgroundColor(Color.rgb(248, 248, 248))
+            setPadding(dp(16), dp(38), dp(16), dp(20))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(58, 61, 69))
+                cornerRadius = dp(18).toFloat()
+            }
             elevation = dp(12).toFloat()
         }
 
-        fun item(label: String, action: () -> Unit) {
-            val row = TextView(this).apply {
-                text = label
-                textSize = 16f
-                setTextColor(Color.DKGRAY)
-                setPadding(dp(12), dp(16), dp(12), dp(16))
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(4), dp(4), dp(18))
+        }
+
+        val title = TextView(this).apply {
+            text = "Inplay Radar"
+            textSize = 22f
+            setTextColor(Color.WHITE)
+            setTypeface(null, Typeface.BOLD)
+        }
+        header.addView(title, LinearLayout.LayoutParams(0, dp(48), 1f))
+
+        val close = TextView(this).apply {
+            text = "×"
+            textSize = 32f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { drawer.closeDrawer(Gravity.START) }
+        }
+        header.addView(close, LinearLayout.LayoutParams(dp(44), dp(48)))
+        box.addView(header)
+
+        fun divider(): View = View(this).apply {
+            setBackgroundColor(Color.rgb(112, 119, 132))
+        }
+        box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
+            bottomMargin = dp(16)
+        })
+
+        fun item(label: String, icon: String, selected: Boolean = false, action: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(14), 0, dp(12), 0)
+                background = GradientDrawable().apply {
+                    setColor(if (selected) Color.rgb(0, 105, 230) else Color.TRANSPARENT)
+                    cornerRadius = dp(12).toFloat()
+                }
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
@@ -181,12 +220,91 @@ class MainActivity : AppCompatActivity() {
                     drawer.closeDrawer(Gravity.START)
                 }
             }
-            box.addView(row, LinearLayout.LayoutParams(-1, -2))
+
+            val iconView = TextView(this).apply {
+                text = icon
+                textSize = 23f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+            }
+            row.addView(iconView, LinearLayout.LayoutParams(dp(42), dp(48)))
+
+            val text = TextView(this).apply {
+                text = label
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                setPadding(dp(12), 0, 0, 0)
+            }
+            row.addView(text, LinearLayout.LayoutParams(0, dp(48), 1f))
+            box.addView(row, LinearLayout.LayoutParams(-1, dp(48)).apply {
+                bottomMargin = dp(5)
+            })
         }
 
-        item("Ana Sayfa") { web.loadUrl(homeUrl) }
-        item("Yakınlaştır") { showZoomPanel() }
-        item("Tam ekran") {
+        item("Ana Sayfa", "⌂", true) { web.loadUrl(homeUrl) }
+        item("Ayarlar", "⚙") {
+            AlertDialog.Builder(this)
+                .setTitle("Ayarlar")
+                .setMessage("Yeni ayarlar sonraki sürümlerde buraya eklenebilir.")
+                .setPositiveButton("Tamam", null)
+                .show()
+        }
+        item("Hakkında", "ⓘ") {
+            AlertDialog.Builder(this)
+                .setTitle("Inplay Radar")
+                .setMessage("Sürüm 1.0.0")
+                .setPositiveButton("Tamam", null)
+                .show()
+        }
+
+        box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
+            topMargin = dp(12)
+            bottomMargin = dp(14)
+        })
+
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        fun control(label: String, icon: String, action: () -> Unit) {
+            val button = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(dp(4), dp(8), dp(4), dp(8))
+                background = GradientDrawable().apply {
+                    setColor(Color.rgb(63, 67, 77))
+                    setStroke(dp(1), Color.rgb(105, 112, 125))
+                    cornerRadius = dp(12).toFloat()
+                }
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    action()
+                    drawer.closeDrawer(Gravity.START)
+                }
+            }
+            val iconView = TextView(this).apply {
+                text = icon
+                textSize = 25f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+            }
+            button.addView(iconView)
+            val text = TextView(this).apply {
+                text = label
+                textSize = 13f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+            }
+            button.addView(text)
+            controls.addView(button, LinearLayout.LayoutParams(0, dp(76), 1f).apply {
+                if (controls.childCount > 0) leftMargin = dp(8)
+            })
+        }
+
+        control("Yakınlaştır", "⌕") { showZoomPanel() }
+        control("Tam Ekran Yap", "⛶") {
             val immersive =
                 (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) == 0
             window.decorView.systemUiVisibility = if (immersive) {
@@ -199,20 +317,7 @@ class MainActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             }
         }
-        item("Ayarlar") {
-            AlertDialog.Builder(this)
-                .setTitle("Ayarlar")
-                .setMessage("Yeni ayarlar sonraki sürümlerde buraya eklenebilir.")
-                .setPositiveButton("Tamam", null)
-                .show()
-        }
-        item("Hakkında") {
-            AlertDialog.Builder(this)
-                .setTitle("Inplay Radar")
-                .setMessage("Sürüm 1.0.0")
-                .setPositiveButton("Tamam", null)
-                .show()
-        }
+        box.addView(controls, LinearLayout.LayoutParams(-1, dp(76)))
         return box
     }
 
