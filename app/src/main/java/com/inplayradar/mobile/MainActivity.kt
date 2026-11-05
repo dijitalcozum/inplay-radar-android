@@ -242,6 +242,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         item("Ana Sayfa", "⌂", true) { web.loadUrl(homeUrl) }
+        item("Canlı", "◉") {
+            web.loadUrl("https://inplayflux.com/live-scanner?page=live")
+        }
+        item("Bitmiş", "✓") {
+            web.loadUrl("https://inplayflux.com/live-scanner?page=finished")
+        }
+        item("Favorilerim", "☆") {
+            web.loadUrl("https://inplayflux.com/live-scanner?page=favorim&lang=tr")
+        }
+        item("Stratejilerim", "▣") {
+            web.loadUrl("https://inplayflux.com/stratejiler")
+        }
+        item("Sinyaller", "⌁") {
+            web.loadUrl("https://inplayflux.com/stratejiler/sinyaller")
+        }
+        item("Nasıl Kullanılır", "?") {
+            web.loadUrl("https://inplayflux.com/page/how-to-use")
+        }
         item("Ayarlar", "⚙") {
             AlertDialog.Builder(this)
                 .setTitle("Ayarlar")
