@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
     private fun buildDrawer(): LinearLayout {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(34), dp(16), dp(18))
+            setPadding(dp(16), dp(24), dp(16), dp(12))
             background = GradientDrawable().apply {
                 setColor(Color.rgb(58, 61, 69))
                 setStroke(dp(1), Color.rgb(105, 112, 125))
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-            bottomMargin = dp(12)
+            bottomMargin = dp(8)
         })
 
         val scrollView = ScrollView(this).apply {
@@ -263,17 +263,17 @@ class MainActivity : AppCompatActivity() {
 
             val iconView = TextView(this).apply {
                 text = icon
-                textSize = 22f
+                textSize = 20f
                 gravity = Gravity.CENTER
                 setTextColor(Color.WHITE)
             }
-            row.addView(iconView, LinearLayout.LayoutParams(dp(42), -1))
+            row.addView(iconView, LinearLayout.LayoutParams(dp(38), -1))
 
             val labelView = TextView(this).apply {
                 text = label
-                textSize = 16f
+                textSize = 15f
                 setTextColor(Color.WHITE)
-                setPadding(dp(10), 0, 0, 0)
+                setPadding(dp(8), 0, 0, 0)
                 gravity = Gravity.CENTER_VERTICAL
                 maxLines = 1
             }
@@ -288,8 +288,8 @@ class MainActivity : AppCompatActivity() {
             menuRows[label] = row
             itemsContainer.addView(
                 row,
-                LinearLayout.LayoutParams(-1, dp(50)).apply {
-                    bottomMargin = dp(4)
+                LinearLayout.LayoutParams(-1, dp(43)).apply {
+                    bottomMargin = dp(2)
                 }
             )
         }
@@ -328,9 +328,9 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
-        box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-            topMargin = dp(12)
-            bottomMargin = dp(12)
+        itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(8)
         })
 
         val controls = LinearLayout(this).apply {
@@ -362,7 +362,7 @@ class MainActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
                 setTextColor(Color.WHITE)
             }
-            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(34)))
+            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(28)))
 
             val labelView = TextView(this).apply {
                 text = label
@@ -371,11 +371,11 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(Color.WHITE)
                 maxLines = 1
             }
-            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(22)))
+            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(20)))
 
             controls.addView(
                 button,
-                LinearLayout.LayoutParams(0, dp(72), 1f).apply {
+                LinearLayout.LayoutParams(0, dp(58), 1f).apply {
                     if (controls.childCount > 0) leftMargin = dp(8)
                 }
             )
@@ -396,7 +396,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        box.addView(controls, LinearLayout.LayoutParams(-1, dp(72)))
+        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(58)).apply {
+            topMargin = dp(2)
+            bottomMargin = dp(8)
+        })
         return box
     }
 
