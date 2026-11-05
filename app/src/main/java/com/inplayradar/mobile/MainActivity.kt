@@ -177,11 +177,11 @@ class MainActivity : AppCompatActivity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(4), 0, dp(2), dp(10))
+            setPadding(dp(4), 0, dp(2), 0)
         }
 
         val logo = ImageView(this).apply {
-            setImageResource(R.mipmap.ic_launcher)
+            setImageResource(R.drawable.ic_radar_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
         }
         header.addView(logo, LinearLayout.LayoutParams(dp(42), dp(42)))
@@ -288,8 +288,8 @@ class MainActivity : AppCompatActivity() {
             menuRows[label] = row
             itemsContainer.addView(
                 row,
-                LinearLayout.LayoutParams(-1, dp(43)).apply {
-                    bottomMargin = dp(2)
+                LinearLayout.LayoutParams(-1, dp(44)).apply {
+                    bottomMargin = dp(3)
                 }
             )
         }
@@ -375,7 +375,7 @@ class MainActivity : AppCompatActivity() {
 
             controls.addView(
                 button,
-                LinearLayout.LayoutParams(0, dp(58), 1f).apply {
+                LinearLayout.LayoutParams(0, dp(78), 1f).apply {
                     if (controls.childCount > 0) leftMargin = dp(8)
                 }
             )
@@ -396,7 +396,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(58)).apply {
+        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(78)).apply {
             topMargin = dp(2)
             bottomMargin = dp(8)
         })
