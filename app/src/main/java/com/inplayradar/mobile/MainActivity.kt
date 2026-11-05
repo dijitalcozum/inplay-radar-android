@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity() {
         }
         scrollView.addView(
             itemsContainer,
-            ScrollView.LayoutParams(
+            ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
