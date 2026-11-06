@@ -289,7 +289,7 @@ class MainActivity : AppCompatActivity() {
             itemsContainer.addView(
                 row,
                 LinearLayout.LayoutParams(-1, dp(44)).apply {
-                    bottomMargin = dp(3)
+                    bottomMargin = dp(8)
                 }
             )
         }
