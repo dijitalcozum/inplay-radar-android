@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity() {
             menuRows[label] = row
             itemsContainer.addView(
                 row,
-                LinearLayout.LayoutParams(-1, dp(44)).apply {
+                LinearLayout.LayoutParams(-1, dp(48)).apply {
                     bottomMargin = dp(8)
                 }
             )
