@@ -33,22 +33,168 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
 class MainActivity : AppCompatActivity() {
+    private data class MenuConfig(
+        val menuWidth: Int = 288,
+        val menuHeight: Int = 0,
+        val menuVerticalPosition: String = "top",
+        val logoX: Int = 0,
+        val logoY: Int = 0,
+        val titleX: Int = 0,
+        val titleY: Int = 0,
+        val closeX: Int = 0,
+        val closeY: Int = 0,
+        val menuIconX: Int = 0,
+        val menuIconY: Int = 0,
+        val menuTextX: Int = 0,
+        val menuTextY: Int = 0,
+        val controlButtonX: Int = 0,
+        val controlButtonY: Int = 0,
+        val controlIconX: Int = 0,
+        val controlIconY: Int = 0,
+        val controlTextX: Int = 0,
+        val controlTextY: Int = 0,
+        val menuPadding: Int = 16,
+        val headerHeight: Int = 62,
+        val logoWidth: Int = 42,
+        val logoHeight: Int = 42,
+        val closeWidth: Int = 40,
+        val closeHeight: Int = 48,
+        val itemHeight: Int = 52,
+        val itemSpacing: Int = 8,
+        val iconAreaWidth: Int = 38,
+        val iconSize: Int = 28,
+        val fontSize: Int = 16,
+        val controlHeight: Int = 78,
+        val controlIconHeight: Int = 28,
+        val controlLabelHeight: Int = 20,
+        val cornerRadius: Int = 20,
+        val itemCornerRadius: Int = 11,
+        val controlCornerRadius: Int = 12,
+        val menuTopPadding: Int = 24,
+        val menuBottomPadding: Int = 12,
+        val headerTitleSize: Int = 20,
+        val headerTitleHeight: Int = 48,
+        val itemPadding: Int = 10,
+        val itemTextPadding: Int = 8,
+        val controlPadding: Int = 7,
+        val controlIconSize: Int = 24,
+        val controlLabelSize: Int = 13,
+        val controlTopMargin: Int = 2,
+        val controlBottomMargin: Int = 8,
+        val zoomPanelPadding: Int = 18,
+        val zoomPanelBottom: Int = 32,
+        val zoomHeaderHeight: Int = 48,
+        val zoomValueWidth: Int = 68,
+        val zoomValueTextSize: Int = 17,
+        val zoomResetWidth: Int = 87,
+        val zoomResetTextSize: Int = 16,
+        val zoomControlHeight: Int = 48,
+        val zoomButtonTextSize: Int = 29,
+        val zoomMinusWidth: Int = 44,
+        val zoomPlusWidth: Int = 48,
+        val menuBorder: String = "#69707D",
+        val dividerColor: String = "#707784",
+        val selectedColor: String = "#0069E6",
+        val controlBackground: String = "#3F434D",
+        val controlBorder: String = "#69707D",
+        val zoomBackground: String = "#FAF8FD",
+        val zoomDivider: String = "#DAD7E0",
+        val zoomTextColor: String = "#191919",
+        val zoomResetColor: String = "#4285F4"
+    )
+
+    private var menuConfig = MenuConfig()
+    private data class MenuTheme(
+        val id: String,
+        val name: String,
+        val background: String,
+        val border: String,
+        val divider: String,
+        val selected: String,
+        val controlBackground: String,
+        val controlBorder: String,
+        val text: String,
+        val icon: String,
+        val secondaryText: String
+    )
+
+    private val menuThemes = listOf(
+        MenuTheme(
+            "minimal", "Kompakt Minimal",
+            "#F8FAFC", "#E2E8F0", "#E9EEF4", "#E2E8F0",
+            "#FFFFFF", "#E2E8F0", "#1E293B", "#475569", "#64748B"
+        ),
+        MenuTheme(
+            "material_light", "Material Açık",
+            "#FFFFFF", "#D9E0EA", "#E5EAF1", "#E8F0FE",
+            "#F3F6FA", "#D9E0EA", "#202938", "#334155", "#64748B"
+        ),
+        MenuTheme(
+            "glass", "Glassmorphism",
+            "#E8F0F8", "#B8C9DA", "#C8D7E6", "#D1E4F8",
+            "#DCE8F4", "#B8C9DA", "#26384D", "#3D6388", "#647D96"
+        ),
+        MenuTheme(
+            "neon", "Neon Modern",
+            "#101827", "#168BFF", "#263B58", "#073D75",
+            "#172B45", "#168BFF", "#FFFFFF", "#55B7FF", "#A9C8E8"
+        )
+    )
+
+    private var selectedMenuThemeId = "material_light"
+
+    private fun saveMenuTheme(themeId: String) {
+        selectedMenuThemeId = themeId
+        getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
+            .edit()
+            .putString("menu_theme_id", themeId)
+            .apply()
+    }
+
+    private fun cfgColor(value: String): Int =
+        try { Color.parseColor(value) } catch (_: Exception) { Color.GRAY }
+
     private lateinit var drawer: DrawerLayout
     private lateinit var refresh: SwipeRefreshLayout
     private lateinit var web: WebView
     private lateinit var zoomPanel: LinearLayout
+    private lateinit var drawerPanel: LinearLayout
+    private lateinit var contentContainer: FrameLayout
     private lateinit var zoomValue: TextView
     private lateinit var zoomSeekBar: SeekBar
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
     private var zoom = 100
+    private var customItemHeight = 48
+    private var customItemSpacing = 8
     private val zoomHandler = Handler(Looper.getMainLooper())
     private val hideZoomPanel = Runnable {
         if (::zoomPanel.isInitialized) zoomPanel.visibility = View.GONE
     }
 
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val savedThemeId = getSharedPreferences(
+            "inplay_radar_preferences", MODE_PRIVATE
+        ).getString("menu_theme_id", null)
+
+        selectedMenuThemeId = savedThemeId
+            ?.takeIf { id -> menuThemes.any { it.id == id } }
+            ?: "material_light"
+
+        val menuPreferences = getSharedPreferences(
+            "inplay_radar_preferences", MODE_PRIVATE
+        )
+        customItemHeight = menuPreferences.getInt("custom_item_height", 48)
+            .coerceIn(24, 100)
+        customItemSpacing = menuPreferences.getInt("custom_item_spacing", 8)
+            .coerceIn(0, 20)
+        menuConfig = menuConfig.copy(
+            itemHeight = customItemHeight,
+            itemSpacing = customItemSpacing
+        )
 
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
@@ -129,13 +275,20 @@ class MainActivity : AppCompatActivity() {
         refresh.setOnRefreshListener { web.reload() }
         refresh.addView(web, ViewGroup.LayoutParams(-1, -1))
 
-        val content = FrameLayout(this)
-        content.addView(refresh, FrameLayout.LayoutParams(-1, -1))
-        drawer.addView(content, DrawerLayout.LayoutParams(-1, -1))
+        contentContainer = FrameLayout(this)
+        contentContainer.addView(refresh, FrameLayout.LayoutParams(-1, -1))
+        drawer.addView(contentContainer, DrawerLayout.LayoutParams(-1, -1))
 
-        val drawerPanel = buildDrawer()
-        val drawerParams = DrawerLayout.LayoutParams(dp(288), -1).apply {
-            gravity = Gravity.START
+        drawerPanel = buildDrawer()
+        val drawerParams = DrawerLayout.LayoutParams(
+            dp(menuConfig.menuWidth),
+            if (menuConfig.menuHeight > 0) dp(menuConfig.menuHeight) else -1
+        ).apply {
+            gravity = Gravity.START or when (menuConfig.menuVerticalPosition.lowercase()) {
+                "center" -> Gravity.CENTER_VERTICAL
+                "bottom" -> Gravity.BOTTOM
+                else -> Gravity.TOP
+            }
         }
         drawer.addView(drawerPanel, drawerParams)
 
@@ -147,8 +300,8 @@ class MainActivity : AppCompatActivity() {
         ).apply {
             setMargins(dp(16), 0, dp(16), dp(32))
         }
-        content.addView(zoomPanel, zoomPanelParams)
-        ViewCompat.setOnApplyWindowInsetsListener(content) { _, insets ->
+        contentContainer.addView(zoomPanel, zoomPanelParams)
+        ViewCompat.setOnApplyWindowInsetsListener(contentContainer) { _, insets ->
             val navigationBarHeight =
                 insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
             val params = zoomPanel.layoutParams as FrameLayout.LayoutParams
@@ -156,22 +309,79 @@ class MainActivity : AppCompatActivity() {
             zoomPanel.layoutParams = params
             insets
         }
-        ViewCompat.requestApplyInsets(content)
+        ViewCompat.requestApplyInsets(contentContainer)
 
         setContentView(drawer)
         web.loadUrl(homeUrl)
     }
 
+
+    private fun applyMenuConfig() {
+        if (!::drawerPanel.isInitialized || !::contentContainer.isInitialized ||
+            !::zoomPanel.isInitialized
+        ) return
+
+        val oldScrollY = (drawerPanel.getChildAt(2) as? ScrollView)?.scrollY ?: 0
+        val rebuiltDrawer = buildDrawer()
+
+        drawerPanel.setPadding(
+            rebuiltDrawer.paddingLeft,
+            rebuiltDrawer.paddingTop,
+            rebuiltDrawer.paddingRight,
+            rebuiltDrawer.paddingBottom
+        )
+        drawerPanel.background = rebuiltDrawer.background
+        drawerPanel.elevation = rebuiltDrawer.elevation
+
+        drawerPanel.removeAllViews()
+        while (rebuiltDrawer.childCount > 0) {
+            val child = rebuiltDrawer.getChildAt(0)
+            val childParams = child.layoutParams
+            rebuiltDrawer.removeViewAt(0)
+            drawerPanel.addView(child, childParams)
+        }
+
+        drawerPanel.layoutParams = drawerPanel.layoutParams.apply {
+            width = dp(menuConfig.menuWidth)
+            height = if (menuConfig.menuHeight > 0) dp(menuConfig.menuHeight) else -1
+        }
+
+        (drawerPanel.getChildAt(2) as? ScrollView)?.post {
+            (drawerPanel.getChildAt(2) as? ScrollView)?.scrollTo(0, oldScrollY)
+        }
+
+        val zoomWasVisible = zoomPanel.visibility == View.VISIBLE
+        contentContainer.removeView(zoomPanel)
+        zoomPanel = buildZoomPanel()
+        if (zoomWasVisible) zoomPanel.visibility = View.VISIBLE
+
+        val bottomInset = ViewCompat.getRootWindowInsets(contentContainer)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+
+        contentContainer.addView(
+            zoomPanel,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            ).apply {
+                setMargins(dp(16), 0, dp(16), bottomInset + dp(menuConfig.zoomPanelBottom))
+            }
+        )
+    }
+
     private fun buildDrawer(): LinearLayout {
+        val theme = menuThemes.firstOrNull { it.id == selectedMenuThemeId }
+            ?: menuThemes.first()
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(24), dp(16), dp(12))
+            setPadding(dp(menuConfig.menuPadding), dp(menuConfig.menuTopPadding), dp(menuConfig.menuPadding), dp(menuConfig.menuBottomPadding))
             background = GradientDrawable().apply {
-                setColor(Color.rgb(58, 61, 69))
-                setStroke(dp(1), Color.rgb(105, 112, 125))
-                cornerRadius = dp(18).toFloat()
+                setColor(cfgColor(theme.background))
+                setStroke(dp(1), cfgColor(theme.border))
+                cornerRadius = dp(menuConfig.cornerRadius).toFloat()
             }
-            elevation = dp(12).toFloat()
+            elevation = dp(menuConfig.controlCornerRadius).toFloat()
         }
 
         val header = LinearLayout(this).apply {
@@ -184,31 +394,41 @@ class MainActivity : AppCompatActivity() {
             setImageResource(R.drawable.ic_radar_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
         }
-        header.addView(logo, LinearLayout.LayoutParams(dp(42), dp(42)))
+        header.addView(logo, LinearLayout.LayoutParams(dp(menuConfig.logoWidth), dp(menuConfig.logoHeight)).apply {
+            leftMargin = dp(menuConfig.logoX)
+            topMargin = dp(menuConfig.logoY)
+        })
 
         val title = TextView(this).apply {
             text = "Inplay Radar"
-            textSize = 21f
-            setTextColor(Color.WHITE)
+            textSize = menuConfig.headerTitleSize.toFloat()
+            setTextColor(cfgColor(theme.text))
             setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(10), 0, 0, 0)
         }
-        header.addView(title, LinearLayout.LayoutParams(0, dp(48), 1f))
+        header.addView(title, LinearLayout.LayoutParams(0, dp(menuConfig.headerTitleHeight), 1f).apply {
+            leftMargin = dp(menuConfig.titleX)
+            topMargin = dp(menuConfig.titleY)
+        })
 
         val close = TextView(this).apply {
             text = "×"
             textSize = 32f
             gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
+            setTextColor(cfgColor(theme.secondaryText))
             isClickable = true
             isFocusable = true
             setOnClickListener { drawer.closeDrawer(Gravity.START) }
         }
-        header.addView(close, LinearLayout.LayoutParams(dp(40), dp(48)))
-        box.addView(header, LinearLayout.LayoutParams(-1, dp(58)))
+        header.addView(close, LinearLayout.LayoutParams(dp(menuConfig.closeWidth), dp(menuConfig.closeHeight)).apply {
+            leftMargin = dp(menuConfig.closeX)
+            topMargin = dp(menuConfig.closeY)
+        })
+        box.addView(header, LinearLayout.LayoutParams(-1, dp(menuConfig.headerHeight)))
 
         fun divider(): View = View(this).apply {
-            setBackgroundColor(Color.rgb(112, 119, 132))
+            setBackgroundColor(cfgColor(theme.divider))
         }
 
         box.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
@@ -239,9 +459,9 @@ class MainActivity : AppCompatActivity() {
         fun itemBackground(selected: Boolean): GradientDrawable =
             GradientDrawable().apply {
                 setColor(
-                    if (selected) Color.rgb(0, 105, 230) else Color.TRANSPARENT
+                    if (selected) cfgColor(theme.selected) else Color.TRANSPARENT
                 )
-                cornerRadius = dp(11).toFloat()
+                cornerRadius = dp(menuConfig.itemCornerRadius).toFloat()
             }
 
         fun updateSelection(label: String) {
@@ -255,7 +475,7 @@ class MainActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(10), 0, dp(10), 0)
+                setPadding(dp(menuConfig.itemPadding), 0, dp(menuConfig.itemPadding), 0)
                 background = itemBackground(label == selectedMenu)
                 isClickable = true
                 isFocusable = true
@@ -263,33 +483,41 @@ class MainActivity : AppCompatActivity() {
 
             val iconView = TextView(this).apply {
                 text = icon
-                textSize = 20f
+                textSize = menuConfig.iconSize.toFloat()
                 gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
+                setTextColor(cfgColor(theme.icon))
             }
-            row.addView(iconView, LinearLayout.LayoutParams(dp(38), -1))
+            row.addView(iconView, LinearLayout.LayoutParams(dp(menuConfig.iconAreaWidth), -1).apply {
+                leftMargin = dp(menuConfig.menuIconX)
+                topMargin = dp(menuConfig.menuIconY)
+            })
 
             val labelView = TextView(this).apply {
                 text = label
-                textSize = 15f
-                setTextColor(Color.WHITE)
-                setPadding(dp(8), 0, 0, 0)
+                textSize = menuConfig.fontSize.toFloat()
+                setTextColor(cfgColor(theme.text))
+                setPadding(dp(menuConfig.itemTextPadding), 0, 0, 0)
                 gravity = Gravity.CENTER_VERTICAL
                 maxLines = 1
             }
-            row.addView(labelView, LinearLayout.LayoutParams(0, -1, 1f))
+            row.addView(labelView, LinearLayout.LayoutParams(0, -1, 1f).apply {
+                leftMargin = dp(menuConfig.menuTextX)
+                topMargin = dp(menuConfig.menuTextY)
+            })
 
             row.setOnClickListener {
                 updateSelection(label)
                 action()
-                drawer.closeDrawer(Gravity.START)
+                if (label != "Ayarlar") {
+                    drawer.closeDrawer(Gravity.START)
+                }
             }
 
             menuRows[label] = row
             itemsContainer.addView(
                 row,
-                LinearLayout.LayoutParams(-1, dp(52)).apply {
-                    bottomMargin = dp(8)
+                LinearLayout.LayoutParams(-1, dp(menuConfig.itemHeight)).apply {
+                    bottomMargin = dp(menuConfig.itemSpacing)
                 }
             )
         }
@@ -316,8 +544,10 @@ class MainActivity : AppCompatActivity() {
         item("Ayarlar", "⚙") {
             AlertDialog.Builder(this)
                 .setTitle("Ayarlar")
-                .setMessage("Yeni ayarlar sonraki sürümlerde buraya eklenebilir.")
-                .setPositiveButton("Tamam", null)
+                .setItems(arrayOf("Menüyü Özelleştir")) { _, which ->
+                    if (which == 0) showMenuCustomizationPanel()
+                }
+                .setNegativeButton("Kapat", null)
                 .show()
         }
         item("Hakkında", "ⓘ") {
@@ -342,10 +572,10 @@ class MainActivity : AppCompatActivity() {
             val button = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(dp(4), dp(7), dp(4), dp(7))
+                setPadding(dp(4), dp(menuConfig.controlPadding), dp(4), dp(menuConfig.controlPadding))
                 background = GradientDrawable().apply {
-                    setColor(Color.rgb(63, 67, 77))
-                    setStroke(dp(1), Color.rgb(105, 112, 125))
+                    setColor(cfgColor(theme.controlBackground))
+                    setStroke(dp(1), cfgColor(theme.controlBorder))
                     cornerRadius = dp(12).toFloat()
                 }
                 isClickable = true
@@ -358,25 +588,32 @@ class MainActivity : AppCompatActivity() {
 
             val iconView = TextView(this).apply {
                 text = icon
-                textSize = 24f
+                textSize = menuConfig.controlIconSize.toFloat()
                 gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
+                setTextColor(cfgColor(theme.icon))
             }
-            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(28)))
+            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(menuConfig.controlIconHeight)).apply {
+                leftMargin = dp(menuConfig.controlIconX)
+                topMargin = dp(menuConfig.controlIconY)
+            })
 
             val labelView = TextView(this).apply {
                 text = label
-                textSize = 13f
+                textSize = menuConfig.controlLabelSize.toFloat()
                 gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
+                setTextColor(cfgColor(theme.text))
                 maxLines = 1
             }
-            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(20)))
+            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(menuConfig.controlLabelHeight)).apply {
+                leftMargin = dp(menuConfig.controlTextX)
+                topMargin = dp(menuConfig.controlTextY)
+            })
 
             controls.addView(
                 button,
-                LinearLayout.LayoutParams(0, dp(78), 1f).apply {
-                    if (controls.childCount > 0) leftMargin = dp(8)
+                LinearLayout.LayoutParams(0, dp(menuConfig.controlHeight), 1f).apply {
+                    leftMargin = dp(menuConfig.controlButtonX + if (controls.childCount > 0) 8 else 0)
+                    topMargin = dp(menuConfig.controlButtonY)
                 }
             )
         }
@@ -396,52 +633,389 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(78)).apply {
-            topMargin = dp(2)
-            bottomMargin = dp(8)
+        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(menuConfig.controlHeight)).apply {
+            topMargin = dp(menuConfig.controlTopMargin)
+            bottomMargin = dp(menuConfig.controlBottomMargin)
         })
         return box
+    }
+
+    private fun updateCustomMenuItems() {
+        getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
+            .edit()
+            .putInt("custom_item_height", customItemHeight)
+            .putInt("custom_item_spacing", customItemSpacing)
+            .apply()
+
+        menuConfig = menuConfig.copy(
+            itemHeight = customItemHeight,
+            itemSpacing = customItemSpacing
+        )
+        applyMenuConfig()
+    }
+
+    private fun showMenuCustomizationPanel() {
+        customItemHeight = menuConfig.itemHeight
+        customItemSpacing = menuConfig.itemSpacing
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(248, 250, 253))
+                cornerRadius = dp(20).toFloat()
+                setStroke(dp(1), Color.rgb(218, 226, 237))
+            }
+        }
+
+        val title = TextView(this).apply {
+            text = "Menüyü Özelleştir"
+            textSize = 20f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(30, 41, 59))
+        }
+        panel.addView(title, LinearLayout.LayoutParams(-1, dp(46)))
+
+        val tabs = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(6), 0, dp(10))
+        }
+        panel.addView(tabs, LinearLayout.LayoutParams(-1, dp(54)))
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        panel.addView(
+            content,
+            LinearLayout.LayoutParams(-1, -2)
+        )
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(panel)
+            .create()
+
+        fun tabButton(label: String, selected: Boolean, action: () -> Unit): TextView {
+            return TextView(this).apply {
+                text = label
+                textSize = 14f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(
+                    if (selected) Color.WHITE else Color.rgb(71, 85, 105)
+                )
+                background = GradientDrawable().apply {
+                    setColor(
+                        if (selected) Color.rgb(45, 105, 190)
+                        else Color.rgb(235, 240, 247)
+                    )
+                    cornerRadius = dp(11).toFloat()
+                }
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { action() }
+            }
+        }
+
+        lateinit var showMeasurements: () -> Unit
+        lateinit var showThemes: () -> Unit
+
+        fun renderTabs(selectedTab: String) {
+            tabs.removeAllViews()
+
+            tabs.addView(
+                tabButton("Menü Ölçüleri", selectedTab == "sizes", showMeasurements),
+                LinearLayout.LayoutParams(0, dp(42), 1f).apply {
+                    rightMargin = dp(5)
+                }
+            )
+            tabs.addView(
+                tabButton("Görünüm", selectedTab == "themes", showThemes),
+                LinearLayout.LayoutParams(0, dp(42), 1f).apply {
+                    leftMargin = dp(5)
+                }
+            )
+        }
+
+        showMeasurements = {
+            renderTabs("sizes")
+            content.removeAllViews()
+
+            fun sizeCard(
+                label: String,
+                minimum: Int,
+                maximum: Int,
+                getValue: () -> Int,
+                change: (Int) -> Unit
+            ): LinearLayout {
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(13), dp(10), dp(13), dp(10))
+                    background = GradientDrawable().apply {
+                        setColor(Color.WHITE)
+                        cornerRadius = dp(14).toFloat()
+                        setStroke(dp(1), Color.rgb(222, 229, 238))
+                    }
+                }
+
+                val heading = TextView(this).apply {
+                    text = label
+                    textSize = 15f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(Color.rgb(38, 50, 68))
+                }
+                card.addView(heading)
+
+                val valueText = TextView(this).apply {
+                    text = "${getValue()} dp"
+                    textSize = 18f
+                    typeface = Typeface.DEFAULT_BOLD
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.rgb(45, 105, 190))
+                }
+                card.addView(valueText, LinearLayout.LayoutParams(-1, dp(34)))
+
+                val slider = SeekBar(this).apply {
+                    max = maximum - minimum
+                    progress = (getValue() - minimum).coerceIn(0, max)
+                }
+                card.addView(slider, LinearLayout.LayoutParams(-1, dp(38)))
+
+                val buttons = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                }
+
+                fun stepButton(symbol: String, amount: Int): TextView =
+                    TextView(this).apply {
+                        text = symbol
+                        textSize = 22f
+                        gravity = Gravity.CENTER
+                        setTextColor(Color.WHITE)
+                        background = GradientDrawable().apply {
+                            setColor(Color.rgb(45, 105, 190))
+                            cornerRadius = dp(9).toFloat()
+                        }
+                        isClickable = true
+                        isFocusable = true
+                        setOnClickListener {
+                            val newProgress =
+                                (slider.progress + amount).coerceIn(0, slider.max)
+                            slider.progress = newProgress
+                            change(minimum + newProgress)
+                            valueText.text = "${getValue()} dp"
+                        }
+                    }
+
+                buttons.addView(
+                    stepButton("−", -1),
+                    LinearLayout.LayoutParams(dp(48), dp(38)).apply {
+                        rightMargin = dp(12)
+                    }
+                )
+                buttons.addView(
+                    stepButton("+", 1),
+                    LinearLayout.LayoutParams(dp(48), dp(38))
+                )
+                card.addView(buttons)
+
+                slider.setOnSeekBarChangeListener(
+                    object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(
+                            seekBar: SeekBar?,
+                            progress: Int,
+                            fromUser: Boolean
+                        ) {
+                            if (!fromUser) return
+                            change(minimum + progress)
+                            valueText.text = "${getValue()} dp"
+                        }
+
+                        override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                        override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+                    }
+                )
+
+                return card
+            }
+
+            content.addView(
+                sizeCard(
+                    "Satır Yüksekliği", 24, 100,
+                    { customItemHeight },
+                    {
+                        customItemHeight = it
+                        updateCustomMenuItems()
+                    }
+                ),
+                LinearLayout.LayoutParams(-1, dp(145)).apply {
+                    bottomMargin = dp(10)
+                }
+            )
+
+            content.addView(
+                sizeCard(
+                    "Satır Aralığı", 0, 20,
+                    { customItemSpacing },
+                    {
+                        customItemSpacing = it
+                        updateCustomMenuItems()
+                    }
+                ),
+                LinearLayout.LayoutParams(-1, dp(145))
+            )
+
+            val reset = TextView(this).apply {
+                text = "Ölçüleri Sıfırla"
+                textSize = 14f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+                background = GradientDrawable().apply {
+                    setColor(Color.rgb(45, 105, 190))
+                    cornerRadius = dp(11).toFloat()
+                }
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    customItemHeight = 48
+                    customItemSpacing = 8
+                    updateCustomMenuItems()
+                    showMeasurements()
+                }
+            }
+            content.addView(
+                reset,
+                LinearLayout.LayoutParams(-1, dp(42)).apply {
+                    topMargin = dp(12)
+                }
+            )
+        }
+
+        showThemes = {
+            renderTabs("themes")
+            content.removeAllViews()
+
+            val description = TextView(this).apply {
+                text = "Menünün görünümünü seç. Seçimin cihazında saklanır."
+                textSize = 12f
+                setTextColor(Color.rgb(100, 116, 139))
+                gravity = Gravity.CENTER
+            }
+            content.addView(description, LinearLayout.LayoutParams(-1, dp(34)))
+
+            menuThemes.forEach { theme ->
+                val selected = theme.id == selectedMenuThemeId
+
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(12), dp(9), dp(12), dp(9))
+                    background = GradientDrawable().apply {
+                        setColor(cfgColor(theme.background))
+                        cornerRadius = dp(12).toFloat()
+                        setStroke(
+                            dp(if (selected) 2 else 1),
+                            cfgColor(if (selected) theme.selected else theme.border)
+                        )
+                    }
+                    isClickable = true
+                    isFocusable = true
+                }
+
+                val preview = View(this).apply {
+                    background = GradientDrawable().apply {
+                        setColor(cfgColor(theme.selected))
+                        cornerRadius = dp(7).toFloat()
+                        setStroke(dp(1), cfgColor(theme.border))
+                    }
+                }
+                card.addView(
+                    preview,
+                    LinearLayout.LayoutParams(dp(42), dp(34)).apply {
+                        rightMargin = dp(12)
+                    }
+                )
+
+                val name = TextView(this).apply {
+                    text = theme.name
+                    textSize = 14f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(cfgColor(theme.text))
+                }
+                card.addView(name, LinearLayout.LayoutParams(0, -2, 1f))
+
+                val mark = TextView(this).apply {
+                    text = if (selected) "✓" else ""
+                    textSize = 20f
+                    typeface = Typeface.DEFAULT_BOLD
+                    gravity = Gravity.CENTER
+                    setTextColor(cfgColor(theme.icon))
+                }
+                card.addView(mark, LinearLayout.LayoutParams(dp(28), dp(34)))
+
+                card.setOnClickListener {
+                    saveMenuTheme(theme.id)
+                    applyMenuConfig()
+                    showThemes()
+                }
+
+                content.addView(
+                    card,
+                    LinearLayout.LayoutParams(-1, dp(56)).apply {
+                        bottomMargin = dp(7)
+                    }
+                )
+            }
+        }
+
+
+        showMeasurements()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(dp(340), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), 0, dp(18), 0)
+            setPadding(dp(menuConfig.zoomPanelPadding), 0, dp(menuConfig.zoomPanelPadding), 0)
             setBackgroundColor(Color.TRANSPARENT)
             visibility = View.GONE
         }
 
-        val pillColor = Color.rgb(250, 248, 253)
+        val pillColor = cfgColor(menuConfig.zoomBackground)
 
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 setColor(pillColor)
-                cornerRadius = dp(40).toFloat()
+                cornerRadius = dp(menuConfig.cornerRadius + 22).toFloat()
             }
             elevation = dp(8).toFloat()
         }
 
         zoomValue = TextView(this).apply {
             text = "$zoom%"
-            textSize = 17f
+            textSize = menuConfig.zoomValueTextSize.toFloat()
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(25, 25, 25))
+            setTextColor(cfgColor(menuConfig.zoomTextColor))
             setTypeface(null, Typeface.NORMAL)
         }
-        header.addView(zoomValue, LinearLayout.LayoutParams(dp(68), dp(48)))
+        header.addView(zoomValue, LinearLayout.LayoutParams(dp(menuConfig.zoomValueWidth), dp(menuConfig.zoomHeaderHeight)))
 
         val divider = View(this).apply {
-            setBackgroundColor(Color.rgb(218, 215, 224))
+            setBackgroundColor(cfgColor(menuConfig.zoomDivider))
         }
-        header.addView(divider, LinearLayout.LayoutParams(dp(1), dp(48)))
+        header.addView(divider, LinearLayout.LayoutParams(dp(1), dp(menuConfig.zoomHeaderHeight)))
 
         val reset = TextView(this).apply {
             text = "Sıfırla"
-            textSize = 16f
+            textSize = menuConfig.zoomResetTextSize.toFloat()
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(66, 133, 244))
+            setTextColor(cfgColor(menuConfig.zoomResetColor))
             isClickable = true
             isFocusable = true
             setOnClickListener {
@@ -449,10 +1023,10 @@ class MainActivity : AppCompatActivity() {
                 scheduleZoomPanelHide()
             }
         }
-        header.addView(reset, LinearLayout.LayoutParams(dp(87), dp(48)))
+        header.addView(reset, LinearLayout.LayoutParams(dp(menuConfig.zoomResetWidth), dp(menuConfig.zoomHeaderHeight)))
         panel.addView(
             header,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(menuConfig.zoomHeaderHeight)).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
             }
         )
@@ -471,7 +1045,7 @@ class MainActivity : AppCompatActivity() {
         fun zoomButton(label: String, change: Int): TextView =
             TextView(this).apply {
                 text = label
-                textSize = 29f
+                textSize = menuConfig.zoomButtonTextSize.toFloat()
                 gravity = Gravity.CENTER
                 setTextColor(Color.BLACK)
                 isClickable = true
@@ -482,7 +1056,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(44), dp(48)))
+        controls.addView(zoomButton("−", -10), LinearLayout.LayoutParams(dp(menuConfig.zoomMinusWidth), dp(menuConfig.zoomControlHeight)))
 
         zoomSeekBar = SeekBar(this).apply {
             max = 16
@@ -506,11 +1080,11 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(48), 1f))
-        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(48), dp(54)))
+        controls.addView(zoomSeekBar, LinearLayout.LayoutParams(0, dp(menuConfig.zoomControlHeight), 1f))
+        controls.addView(zoomButton("+", 10), LinearLayout.LayoutParams(dp(menuConfig.zoomPlusWidth), dp(menuConfig.zoomControlHeight + 6)))
         panel.addView(
             controls,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(menuConfig.zoomControlHeight)).apply {
                 topMargin = dp(8)
             }
         )
