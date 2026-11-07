@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
         val menuPreferences = getSharedPreferences(
             "inplay_radar_preferences", MODE_PRIVATE
         )
-        customItemHeight = menuPreferences.getInt("custom_item_height", 48)
+        customItemHeight = menuPreferences.getInt("custom_item_height", 52)
             .coerceIn(24, 100)
         customItemSpacing = menuPreferences.getInt("custom_item_spacing", 8)
             .coerceIn(0, 20)
