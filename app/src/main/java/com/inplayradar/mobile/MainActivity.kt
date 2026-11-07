@@ -879,7 +879,7 @@ class MainActivity : AppCompatActivity() {
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
-                    customItemHeight = 48
+                    customItemHeight = 52
                     customItemSpacing = 8
                     updateCustomMenuItems()
                     showMeasurements()
