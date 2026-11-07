@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zoomSeekBar: SeekBar
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
     private var zoom = 100
-    private var customItemHeight = 48
+    private var customItemHeight = 52
     private var customItemSpacing = 8
     private val zoomHandler = Handler(Looper.getMainLooper())
     private val hideZoomPanel = Runnable {
