@@ -229,6 +229,9 @@ class MainActivity : AppCompatActivity() {
                     """
                     (function() {
                         var css = '.ir-skip-link, section#uyariMesaji { display: none !important; }';
+                        var targetSelector = 'section#uyariMesaji';
+                        var observedTarget = null;
+
                         function addStyle() {
                             if (!document.documentElement) return false;
                             if (!document.getElementById('irSkipLinkHideStyle')) {
@@ -239,12 +242,57 @@ class MainActivity : AppCompatActivity() {
                             }
                             return true;
                         }
-                        if (!addStyle()) {
-                            var observer = new MutationObserver(function() {
-                                if (addStyle()) observer.disconnect();
-                            });
-                            observer.observe(document, { childList: true, subtree: true });
+
+                        function hideTarget(element) {
+                            if (!element || !element.style) return;
+                            if (element.style.getPropertyValue('display') !== 'none' ||
+                                element.style.getPropertyPriority('display') !== 'important') {
+                                element.style.setProperty('display', 'none', 'important');
+                            }
                         }
+
+                        var targetObserver = new MutationObserver(function() {
+                            hideTarget(observedTarget);
+                        });
+
+                        function watchTarget(element) {
+                            if (!element) return;
+                            if (observedTarget !== element) {
+                                observedTarget = element;
+                                targetObserver.disconnect();
+                                targetObserver.observe(element, {
+                                    attributes: true,
+                                    attributeFilter: ['style', 'class']
+                                });
+                            }
+                            hideTarget(element);
+                        }
+
+                        function inspectNode(node) {
+                            if (!node || (node.nodeType !== 1 && node.nodeType !== 11)) return;
+                            if (node.nodeType === 1 && node.matches(targetSelector)) {
+                                watchTarget(node);
+                            }
+                            if (node.querySelector) {
+                                var found = node.querySelector(targetSelector);
+                                if (found) watchTarget(found);
+                            }
+                        }
+
+                        addStyle();
+                        var existingTarget = document.querySelector(targetSelector);
+                        if (existingTarget) watchTarget(existingTarget);
+
+                        var documentObserver = new MutationObserver(function(records) {
+                            addStyle();
+                            records.forEach(function(record) {
+                                record.addedNodes.forEach(inspectNode);
+                            });
+                        });
+                        documentObserver.observe(document, {
+                            childList: true,
+                            subtree: true
+                        });
                     })();
                     """.trimIndent(),
                     setOf("*")
