@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
                     this,
                     """
                     (function() {
-                        var css = '.ir-skip-link { display: none !important; }';
+                        var css = '.ir-skip-link, section#uyariMesaji { display: none !important; }';
                         function addStyle() {
                             if (!document.documentElement) return false;
                             if (!document.getElementById('irSkipLinkHideStyle')) {
