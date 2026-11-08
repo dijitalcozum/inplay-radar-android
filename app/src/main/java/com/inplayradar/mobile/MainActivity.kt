@@ -253,20 +253,21 @@ class MainActivity : AppCompatActivity() {
                             return true;
                         }
 
-                        function hideTarget(element) {
+                        function applyTargetVisibility(element) {
                             if (!element || !element.style) return;
-                            if (element.style.getPropertyValue('display') !== 'none' ||
+                            var displayValue = showWarningMessage ? 'revert' : 'none';
+                            if (element.style.getPropertyValue('display') !== displayValue ||
                                 element.style.getPropertyPriority('display') !== 'important') {
-                                element.style.setProperty('display', 'none', 'important');
+                                element.style.setProperty('display', displayValue, 'important');
                             }
                         }
 
                         var targetObserver = new MutationObserver(function() {
-                            hideTarget(observedTarget);
+                            applyTargetVisibility(observedTarget);
                         });
 
                         function watchTarget(element) {
-                            if (showWarningMessage || !element) return;
+                            if (!element) return;
                             if (observedTarget !== element) {
                                 observedTarget = element;
                                 targetObserver.disconnect();
@@ -275,7 +276,7 @@ class MainActivity : AppCompatActivity() {
                                     attributeFilter: ['style', 'class']
                                 });
                             }
-                            hideTarget(element);
+                            applyTargetVisibility(element);
                         }
 
                         window.__irSetWarningVisibility = function(show) {
@@ -283,15 +284,7 @@ class MainActivity : AppCompatActivity() {
                             try { localStorage.setItem('ir_show_warning_message', showWarningMessage ? 'true' : 'false'); } catch (e) {}
                             addStyle();
                             var target = document.querySelector(targetSelector);
-                            if (showWarningMessage) {
-                                targetObserver.disconnect();
-                                if (target && target.style.getPropertyValue('display') === 'none' &&
-                                    target.style.getPropertyPriority('display') === 'important') {
-                                    target.style.removeProperty('display');
-                                }
-                            } else if (target) {
-                                watchTarget(target);
-                            }
+                            if (target) watchTarget(target);
                         };
 
                         function inspectNode(node) {
