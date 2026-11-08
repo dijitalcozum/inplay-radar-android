@@ -233,9 +233,18 @@ class MainActivity : AppCompatActivity() {
                     this,
                     """
                     (function() {
-                        var showWarningMessage = false;
+                        var hideWarningMessage = false;
                         try {
-                            showWarningMessage = localStorage.getItem('ir_show_warning_message') === 'true';
+                            var savedHide = localStorage.getItem('ir_hide_warning_message');
+                            if (savedHide !== null) {
+                                hideWarningMessage = savedHide === 'true';
+                            } else {
+                                var legacyShow = localStorage.getItem('ir_show_warning_message');
+                                if (legacyShow !== null) {
+                                    hideWarningMessage = legacyShow !== 'true';
+                                    localStorage.setItem('ir_hide_warning_message', hideWarningMessage ? 'true' : 'false');
+                                }
+                            }
                         } catch (e) {}
                         var css = '.ir-skip-link { display: none !important; }';
                         var targetSelector = 'section#uyariMesaji';
@@ -249,13 +258,13 @@ class MainActivity : AppCompatActivity() {
                                 style.id = 'irSkipLinkHideStyle';
                                 document.documentElement.appendChild(style);
                             }
-                            style.textContent = css + (showWarningMessage ? '' : ' section#uyariMesaji { display: none !important; }');
+                            style.textContent = css + (hideWarningMessage ? ' section#uyariMesaji { display: none !important; }');
                             return true;
                         }
 
                         function applyTargetVisibility(element) {
                             if (!element || !element.style) return;
-                            var displayValue = showWarningMessage ? 'revert' : 'none';
+                            var displayValue = hideWarningMessage ? 'none' : 'revert';
                             if (element.style.getPropertyValue('display') !== displayValue ||
                                 element.style.getPropertyPriority('display') !== 'important') {
                                 element.style.setProperty('display', displayValue, 'important');
@@ -279,9 +288,9 @@ class MainActivity : AppCompatActivity() {
                             applyTargetVisibility(element);
                         }
 
-                        window.__irSetWarningVisibility = function(show) {
-                            showWarningMessage = !!show;
-                            try { localStorage.setItem('ir_show_warning_message', showWarningMessage ? 'true' : 'false'); } catch (e) {}
+                        window.__irSetWarningHidden = function(hide) {
+                            hideWarningMessage = !!hide;
+                            try { localStorage.setItem('ir_hide_warning_message', hideWarningMessage ? 'true' : 'false'); } catch (e) {}
                             addStyle();
                             var target = document.querySelector(targetSelector);
                             if (target) watchTarget(target);
@@ -811,6 +820,17 @@ class MainActivity : AppCompatActivity() {
         val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
         var changed = false
 
+        if (!preferences.contains("hide_warning_message") &&
+            preferences.contains("show_warning_message")
+        ) {
+            preferences.edit()
+                .putBoolean(
+                    "hide_warning_message",
+                    !preferences.getBoolean("show_warning_message", false)
+                )
+                .apply()
+        }
+
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), dp(8))
@@ -853,8 +873,8 @@ class MainActivity : AppCompatActivity() {
                 isChecked = preferences.getBoolean(preferenceKey, defaultValue)
                 setOnCheckedChangeListener { _, isChecked ->
                     preferences.edit().putBoolean(preferenceKey, isChecked).apply()
-                    if (preferenceKey == "show_warning_message" && ::web.isInitialized) {
-                        web.evaluateJavascript("window.__irSetWarningVisibility($isChecked)", null)
+                    if (preferenceKey == "hide_warning_message" && ::web.isInitialized) {
+                        web.evaluateJavascript("window.__irSetWarningHidden($isChecked)", null)
                     }
                     changed = true
                 }
@@ -883,9 +903,9 @@ class MainActivity : AppCompatActivity() {
         })
 
         addSetting(
-            "Uyarı Mesajını Göster",
-            "Daha önce gizlenen uyarı mesajını yeniden gösterir.",
-            "show_warning_message",
+            "Uyarı Mesajını Gizle",
+            "Açıkken uyarı mesajı gizlenir.",
+            "hide_warning_message",
             false
         )
 
