@@ -394,7 +394,7 @@ class MainActivity : AppCompatActivity() {
         request: WebResourceRequest
     ): WebResourceResponse? {
         val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
-        if (!preferences.getBoolean("disable_auto_scroll", true)) return null
+        if (!preferences.getBoolean("disable_auto_scroll", false)) return null
 
         val scriptPath = "/radarv8/js/mobileCards.v830454c1a4b8.js"
         if (!request.url.toString().contains(scriptPath)) return null
@@ -871,7 +871,7 @@ class MainActivity : AppCompatActivity() {
             "Otomatik Kaydırmayı Devre Dışı Bırak",
             "Sıralama değişirken sayfanın konumu korunur.",
             "disable_auto_scroll",
-            true
+            false
         )
 
         val divider = View(this).apply {
