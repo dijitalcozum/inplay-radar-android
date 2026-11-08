@@ -200,7 +200,6 @@ class MainActivity : AppCompatActivity() {
             itemHeight = customItemHeight,
             itemSpacing = customItemSpacing
         )
-        val hideWarningMessage = !menuPreferences.getBoolean("show_warning_message", false)
 
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
@@ -234,20 +233,23 @@ class MainActivity : AppCompatActivity() {
                     this,
                     """
                     (function() {
-                        var hideWarningMessage = ${hideWarningMessage};
-                        var css = '.ir-skip-link { display: none !important; }' +
-                            (hideWarningMessage ? ' section#uyariMesaji { display: none !important; }' : '');
+                        var showWarningMessage = false;
+                        try {
+                            showWarningMessage = localStorage.getItem('ir_show_warning_message') === 'true';
+                        } catch (e) {}
+                        var css = '.ir-skip-link { display: none !important; }';
                         var targetSelector = 'section#uyariMesaji';
                         var observedTarget = null;
 
                         function addStyle() {
                             if (!document.documentElement) return false;
-                            if (!document.getElementById('irSkipLinkHideStyle')) {
-                                var style = document.createElement('style');
+                            var style = document.getElementById('irSkipLinkHideStyle');
+                            if (!style) {
+                                style = document.createElement('style');
                                 style.id = 'irSkipLinkHideStyle';
-                                style.textContent = css;
                                 document.documentElement.appendChild(style);
                             }
+                            style.textContent = css + (showWarningMessage ? '' : ' section#uyariMesaji { display: none !important; }');
                             return true;
                         }
 
@@ -264,7 +266,7 @@ class MainActivity : AppCompatActivity() {
                         });
 
                         function watchTarget(element) {
-                            if (!hideWarningMessage || !element) return;
+                            if (showWarningMessage || !element) return;
                             if (observedTarget !== element) {
                                 observedTarget = element;
                                 targetObserver.disconnect();
@@ -275,6 +277,22 @@ class MainActivity : AppCompatActivity() {
                             }
                             hideTarget(element);
                         }
+
+                        window.__irSetWarningVisibility = function(show) {
+                            showWarningMessage = !!show;
+                            try { localStorage.setItem('ir_show_warning_message', showWarningMessage ? 'true' : 'false'); } catch (e) {}
+                            addStyle();
+                            var target = document.querySelector(targetSelector);
+                            if (showWarningMessage) {
+                                targetObserver.disconnect();
+                                if (target && target.style.getPropertyValue('display') === 'none' &&
+                                    target.style.getPropertyPriority('display') === 'important') {
+                                    target.style.removeProperty('display');
+                                }
+                            } else if (target) {
+                                watchTarget(target);
+                            }
+                        };
 
                         function inspectNode(node) {
                             if (!node || (node.nodeType !== 1 && node.nodeType !== 11)) return;
@@ -842,6 +860,9 @@ class MainActivity : AppCompatActivity() {
                 isChecked = preferences.getBoolean(preferenceKey, defaultValue)
                 setOnCheckedChangeListener { _, isChecked ->
                     preferences.edit().putBoolean(preferenceKey, isChecked).apply()
+                    if (preferenceKey == "show_warning_message" && ::web.isInitialized) {
+                        web.evaluateJavascript("window.__irSetWarningVisibility($isChecked)", null)
+                    }
                     changed = true
                 }
             }
