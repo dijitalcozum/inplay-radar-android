@@ -27,6 +27,7 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -199,6 +200,7 @@ class MainActivity : AppCompatActivity() {
             itemHeight = customItemHeight,
             itemSpacing = customItemSpacing
         )
+        val hideWarningMessage = !menuPreferences.getBoolean("show_warning_message", false)
 
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
@@ -232,7 +234,9 @@ class MainActivity : AppCompatActivity() {
                     this,
                     """
                     (function() {
-                        var css = '.ir-skip-link, section#uyariMesaji { display: none !important; }';
+                        var hideWarningMessage = ${hideWarningMessage};
+                        var css = '.ir-skip-link { display: none !important; }' +
+                            (hideWarningMessage ? ' section#uyariMesaji { display: none !important; }' : '');
                         var targetSelector = 'section#uyariMesaji';
                         var observedTarget = null;
 
@@ -260,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                         });
 
                         function watchTarget(element) {
-                            if (!element) return;
+                            if (!hideWarningMessage || !element) return;
                             if (observedTarget !== element) {
                                 observedTarget = element;
                                 targetObserver.disconnect();
@@ -378,6 +382,9 @@ class MainActivity : AppCompatActivity() {
     private fun interceptMobileCardsScript(
         request: WebResourceRequest
     ): WebResourceResponse? {
+        val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
+        if (!preferences.getBoolean("disable_auto_scroll", true)) return null
+
         val scriptPath = "/radarv8/js/mobileCards.v830454c1a4b8.js"
         if (!request.url.toString().contains(scriptPath)) return null
 
@@ -676,8 +683,11 @@ class MainActivity : AppCompatActivity() {
         item("Ayarlar", "⚙") {
             AlertDialog.Builder(this)
                 .setTitle("Ayarlar")
-                .setItems(arrayOf("Menüyü Özelleştir")) { _, which ->
-                    if (which == 0) showMenuCustomizationPanel()
+                .setItems(arrayOf("Menüyü Özelleştir", "İçerik Ayarları")) { _, which ->
+                    when (which) {
+                        0 -> showMenuCustomizationPanel()
+                        1 -> showContentSettingsPanel()
+                    }
                 }
                 .setNegativeButton("Kapat", null)
                 .show()
@@ -784,6 +794,97 @@ class MainActivity : AppCompatActivity() {
             itemSpacing = customItemSpacing
         )
         applyMenuConfig()
+    }
+
+    private fun showContentSettingsPanel() {
+        val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
+        var changed = false
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+
+        fun addSetting(
+            title: String,
+            description: String,
+            preferenceKey: String,
+            defaultValue: Boolean
+        ) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+
+            val textContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val titleView = TextView(this).apply {
+                text = title
+                textSize = 16f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(Color.rgb(30, 41, 59))
+            }
+            textContainer.addView(titleView)
+
+            val descriptionView = TextView(this).apply {
+                text = description
+                textSize = 12f
+                setTextColor(Color.rgb(100, 116, 139))
+            }
+            textContainer.addView(
+                descriptionView,
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) }
+            )
+
+            val toggle = SwitchCompat(this).apply {
+                isChecked = preferences.getBoolean(preferenceKey, defaultValue)
+                setOnCheckedChangeListener { _, isChecked ->
+                    preferences.edit().putBoolean(preferenceKey, isChecked).apply()
+                    changed = true
+                }
+            }
+
+            row.addView(textContainer, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(toggle, LinearLayout.LayoutParams(-2, -2).apply {
+                leftMargin = dp(12)
+            })
+            panel.addView(row, LinearLayout.LayoutParams(-1, -2))
+        }
+
+        addSetting(
+            "Otomatik Kaydırmayı Devre Dışı Bırak",
+            "Sıralama değişirken sayfanın konumu korunur.",
+            "disable_auto_scroll",
+            true
+        )
+
+        val divider = View(this).apply {
+            setBackgroundColor(Color.rgb(225, 231, 239))
+        }
+        panel.addView(divider, LinearLayout.LayoutParams(-1, dp(1)).apply {
+            topMargin = dp(16)
+            bottomMargin = dp(16)
+        })
+
+        addSetting(
+            "Uyarı Mesajını Göster",
+            "Daha önce gizlenen uyarı mesajını yeniden gösterir.",
+            "show_warning_message",
+            false
+        )
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("İçerik Ayarları")
+            .setView(panel)
+            .setPositiveButton("Kapat", null)
+            .create()
+
+        dialog.setOnDismissListener {
+            if (changed && ::web.isInitialized) web.reload()
+        }
+        dialog.show()
     }
 
     private fun showMenuCustomizationPanel() {
