@@ -258,16 +258,24 @@ class MainActivity : AppCompatActivity() {
                                 style.id = 'irSkipLinkHideStyle';
                                 document.documentElement.appendChild(style);
                             }
-                            style.textContent = css + (hideWarningMessage ? ' section#uyariMesaji { display: none !important; }');
+                            var styleText = css + (hideWarningMessage ? ' section#uyariMesaji { display: none !important; }' : '');
+                            if (style.textContent !== styleText) {
+                                style.textContent = styleText;
+                            }
                             return true;
                         }
 
                         function applyTargetVisibility(element) {
                             if (!element || !element.style) return;
-                            var displayValue = hideWarningMessage ? 'none' : 'revert';
-                            if (element.style.getPropertyValue('display') !== displayValue ||
-                                element.style.getPropertyPriority('display') !== 'important') {
-                                element.style.setProperty('display', displayValue, 'important');
+                            var currentDisplay = element.style.getPropertyValue('display');
+                            var currentPriority = element.style.getPropertyPriority('display');
+
+                            if (hideWarningMessage) {
+                                if (currentDisplay !== 'none' || currentPriority !== 'important') {
+                                    element.style.setProperty('display', 'none', 'important');
+                                }
+                            } else if (currentDisplay === 'none' && currentPriority === 'important') {
+                                element.style.removeProperty('display');
                             }
                         }
 
