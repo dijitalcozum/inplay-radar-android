@@ -110,7 +110,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          cmdline-tools-version: '11076708'
+          cmdline-tools-version: '15859902'
           packages: 'platform-tools'
 
       - name: Install Android platform
