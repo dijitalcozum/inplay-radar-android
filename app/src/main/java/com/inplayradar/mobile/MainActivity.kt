@@ -2,8 +2,11 @@ package com.inplayradar.mobile
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.Typeface
@@ -24,6 +27,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.ValueCallback
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ScrollView
@@ -34,6 +38,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
@@ -169,6 +174,33 @@ class MainActivity : AppCompatActivity() {
     private lateinit var contentContainer: FrameLayout
     private lateinit var zoomValue: TextView
     private lateinit var zoomSeekBar: SeekBar
+    private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val callback = pendingFileCallback
+        pendingFileCallback = null
+
+        if (callback != null) {
+            val selectedUris = mutableListOf<Uri>()
+            val data = result.data
+
+            if (result.resultCode == RESULT_OK && data != null) {
+                val clipData = data.clipData
+                if (clipData != null) {
+                    for (index in 0 until clipData.itemCount) {
+                        clipData.getItemAt(index).uri?.let(selectedUris::add)
+                    }
+                } else {
+                    data.data?.let(selectedUris::add)
+                }
+            }
+
+            callback.onReceiveValue(
+                selectedUris.takeIf { it.isNotEmpty() }?.toTypedArray()
+            )
+        }
+    }
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
     private var zoom = 100
     private var customItemHeight = 52
@@ -356,7 +388,55 @@ class MainActivity : AppCompatActivity() {
                     if (request?.isForMainFrame == true) refresh.isRefreshing = false
                 }
             }
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(
+                    webView: WebView?,
+                    filePathCallback: ValueCallback<Array<Uri>>?,
+                    fileChooserParams: FileChooserParams?
+                ): Boolean {
+                    if (filePathCallback == null || fileChooserParams == null) return false
+
+                    pendingFileCallback?.onReceiveValue(null)
+                    pendingFileCallback = filePathCallback
+
+                    val acceptedTypes = fileChooserParams.acceptTypes
+                        .filter { it.isNotBlank() && it != "*/*" }
+                        .distinct()
+                    val mimeType = if (acceptedTypes.size == 1) acceptedTypes.first() else "*/*"
+                    val allowMultiple =
+                        fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE
+
+                    fun createPickerIntent(action: String) =
+                        Intent(action).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = mimeType
+                            if (acceptedTypes.size > 1) {
+                                putExtra(Intent.EXTRA_MIME_TYPES, acceptedTypes.toTypedArray())
+                            }
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, allowMultiple)
+                        }
+
+                    val openDocumentIntent =
+                        createPickerIntent(Intent.ACTION_OPEN_DOCUMENT)
+                    val getContentIntent =
+                        createPickerIntent(Intent.ACTION_GET_CONTENT)
+                    val chooserIntent = Intent.createChooser(
+                        openDocumentIntent,
+                        "Dosya seç"
+                    ).apply {
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(getContentIntent))
+                    }
+
+                    try {
+                        fileChooserLauncher.launch(chooserIntent)
+                    } catch (_: ActivityNotFoundException) {
+                        pendingFileCallback?.onReceiveValue(null)
+                        pendingFileCallback = null
+                    }
+
+                    return true
+                }
+            }
         }
 
         refresh.setColorSchemeResources(android.R.color.darker_gray)
@@ -1352,6 +1432,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         zoomHandler.removeCallbacks(hideZoomPanel)
+        pendingFileCallback?.onReceiveValue(null)
+        pendingFileCallback = null
         super.onDestroy()
     }
 }
