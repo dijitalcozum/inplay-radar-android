@@ -993,8 +993,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        lateinit var showMeasurements: () -> Unit
-        lateinit var showThemes: () -> Unit
+        var showMeasurements: () -> Unit = {}
+        var showThemes: () -> Unit = {}
 
         fun renderTabs(selectedTab: String) {
             tabs.removeAllViews()
