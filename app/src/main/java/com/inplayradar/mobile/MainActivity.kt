@@ -422,7 +422,7 @@ class MainActivity : AppCompatActivity() {
             connection.connectTimeout = 10000
             connection.readTimeout = 15000
 
-            request.requestHeaders.forEach { (name, value) ->
+            request.requestHeaders?.forEach { (name, value) ->
                 if (!name.equals("Host", true) &&
                     !name.equals("Connection", true) &&
                     !name.equals("Accept-Encoding", true)
