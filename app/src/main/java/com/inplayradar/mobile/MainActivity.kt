@@ -1,5 +1,9 @@
 package com.inplayradar.mobile
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.Typeface
@@ -397,9 +401,32 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(contentContainer)
 
         setContentView(drawer)
+        createNotificationChannel()
         web.loadUrl(homeUrl)
     }
 
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "inplay_radar_alerts",
+                "Inplay Radar Bildirimleri",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Inplay Radar bildirimleri"
+                setSound(
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+            }
+
+            getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
+        }
+    }
 
     private fun applyMenuConfig() {
         if (!::drawerPanel.isInitialized || !::contentContainer.isInitialized ||
