@@ -12,12 +12,12 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -29,13 +29,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
-import java.io.ByteArrayInputStream
-import java.net.HttpURLConnection
-import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     private data class MenuConfig(
@@ -181,6 +179,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                this@MainActivity.handleBackPressed()
+            }
+        })
+
         val savedThemeId = getSharedPreferences(
             "inplay_radar_preferences", MODE_PRIVATE
         ).getString("menu_theme_id", null)
@@ -201,10 +205,7 @@ class MainActivity : AppCompatActivity() {
             itemSpacing = customItemSpacing
         )
 
-        window.decorView.systemUiVisibility =
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -338,13 +339,6 @@ class MainActivity : AppCompatActivity() {
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
             webViewClient = object : WebViewClient() {
-                override fun shouldInterceptRequest(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): WebResourceResponse? {
-                    return request?.let { interceptMobileCardsScript(it) }
-                }
-
                 override fun onPageFinished(view: WebView?, url: String?) {
                     refresh.isRefreshing = false
                     applyZoom()
@@ -406,82 +400,6 @@ class MainActivity : AppCompatActivity() {
         web.loadUrl(homeUrl)
     }
 
-
-    private fun interceptMobileCardsScript(
-        request: WebResourceRequest
-    ): WebResourceResponse? {
-        val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
-        if (!preferences.getBoolean("disable_auto_scroll", false)) return null
-
-        val scriptPath = "/radarv8/js/mobileCards.v830454c1a4b8.js"
-        if (!request.url.toString().contains(scriptPath)) return null
-
-        return try {
-            val connection = URL(request.url.toString()).openConnection() as HttpURLConnection
-            connection.instanceFollowRedirects = true
-            connection.connectTimeout = 10000
-            connection.readTimeout = 15000
-
-            request.requestHeaders.forEach { (name, value) ->
-                if (!name.equals("Host", true) &&
-                    !name.equals("Connection", true) &&
-                    !name.equals("Accept-Encoding", true)
-                ) {
-                    connection.setRequestProperty(name, value)
-                }
-            }
-            connection.setRequestProperty("Accept-Encoding", "identity")
-
-            val cookie = CookieManager.getInstance().getCookie(request.url.toString())
-            if (!cookie.isNullOrEmpty() &&
-                request.requestHeaders.keys.none { it.equals("Cookie", true) }
-            ) {
-                connection.setRequestProperty("Cookie", cookie)
-            }
-
-            val statusCode = connection.responseCode
-            if (statusCode !in 200..299) {
-                connection.disconnect()
-                return null
-            }
-
-            val source = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            val patchPattern = Regex("(syncSortOptions\\(\\);\\s*)restoreViewportAnchor\\(anchor\\);")
-            val matches = patchPattern.findAll(source).count()
-            if (matches != 1) {
-                connection.disconnect()
-                return null
-            }
-
-            val patched = patchPattern.replaceFirst(source, "$1")
-            val responseHeaders = connection.headerFields
-                .filterKeys { it != null }
-                .filterKeys {
-                    !it.equals("Content-Length", true) &&
-                    !it.equals("Content-Encoding", true) &&
-                    !it.equals("Transfer-Encoding", true) &&
-                    !it.equals("Connection", true)
-                }
-                .mapKeys { it.key!! }
-                .mapValues { (_, values) -> values.joinToString(",") }
-
-            val mimeType = connection.contentType
-                ?.substringBefore(";")
-                ?: "application/javascript"
-            val response = WebResourceResponse(
-                mimeType,
-                "UTF-8",
-                statusCode,
-                connection.responseMessage ?: "OK",
-                responseHeaders,
-                ByteArrayInputStream(patched.toByteArray(Charsets.UTF_8))
-            )
-            connection.disconnect()
-            response
-        } catch (_: Exception) {
-            null
-        }
-    }
 
     private fun applyMenuConfig() {
         if (!::drawerPanel.isInitialized || !::contentContainer.isInitialized ||
@@ -895,13 +813,6 @@ class MainActivity : AppCompatActivity() {
             panel.addView(row, LinearLayout.LayoutParams(-1, -2))
         }
 
-        addSetting(
-            "Otomatik Kaydırmayı Devre Dışı Bırak",
-            "Sıralama değişirken sayfanın konumu korunur.",
-            "disable_auto_scroll",
-            false
-        )
-
         val divider = View(this).apply {
             setBackgroundColor(Color.rgb(225, 231, 239))
         }
@@ -993,8 +904,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        lateinit var showMeasurements: () -> Unit
-        lateinit var showThemes: () -> Unit
+        var showMeasurements: () -> Unit = {}
+        var showThemes: () -> Unit = {}
 
         fun renderTabs(selectedTab: String) {
             tabs.removeAllViews()
@@ -1401,15 +1312,14 @@ class MainActivity : AppCompatActivity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
-    @Deprecated("Deprecated in Android API; retained for backward compatibility.")
-    override fun onBackPressed() {
+    private fun handleBackPressed() {
         if (::zoomPanel.isInitialized && zoomPanel.visibility == View.VISIBLE) {
             zoomHandler.removeCallbacks(hideZoomPanel)
             zoomPanel.visibility = View.GONE
-        } else if (drawer.isDrawerOpen(Gravity.START)) {
+        } else if (::drawer.isInitialized && drawer.isDrawerOpen(Gravity.START)) {
             drawer.closeDrawer(Gravity.START)
         } else {
-            super.onBackPressed()
+            finish()
         }
     }
 
