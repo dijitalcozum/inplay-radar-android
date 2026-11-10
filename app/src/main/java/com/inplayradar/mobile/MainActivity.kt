@@ -29,6 +29,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
@@ -177,6 +178,12 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                this@MainActivity.handleBackPressed()
+            }
+        })
 
         val savedThemeId = getSharedPreferences(
             "inplay_radar_preferences", MODE_PRIVATE
@@ -1305,15 +1312,14 @@ class MainActivity : AppCompatActivity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
-    @Deprecated("Deprecated in Android API; retained for backward compatibility.")
-    override fun onBackPressed() {
+    private fun handleBackPressed() {
         if (::zoomPanel.isInitialized && zoomPanel.visibility == View.VISIBLE) {
             zoomHandler.removeCallbacks(hideZoomPanel)
             zoomPanel.visibility = View.GONE
-        } else if (drawer.isDrawerOpen(Gravity.START)) {
+        } else if (::drawer.isInitialized && drawer.isDrawerOpen(Gravity.START)) {
             drawer.closeDrawer(Gravity.START)
         } else {
-            super.onBackPressed()
+            finish()
         }
     }
 
