@@ -45,6 +45,8 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
 class MainActivity : AppCompatActivity() {
+    // MENÜ VE YAKINLAŞTIRMA GÖRÜNÜMÜNÜN AYARLARI
+    // Boyut, boşluk, yazı ve renk değerlerini merkezi olarak tutar.
     private data class MenuConfig(
         val menuWidth: Int = 288,
         val menuHeight: Int = 0,
@@ -116,6 +118,8 @@ class MainActivity : AppCompatActivity() {
     )
 
     private var menuConfig = MenuConfig()
+    // MENÜ TEMASI MODELİ
+    // Her tema için arka plan, kenarlık, metin ve simge renklerini tanımlar.
     private data class MenuTheme(
         val id: String,
         val name: String,
@@ -130,6 +134,8 @@ class MainActivity : AppCompatActivity() {
         val secondaryText: String
     )
 
+    // KULLANILABİLİR MENÜ TEMALARI
+    // Kullanıcının seçebileceği hazır tema seçeneklerini içerir.
     private val menuThemes = listOf(
         MenuTheme(
             "minimal", "Kompakt Minimal",
@@ -155,6 +161,8 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedMenuThemeId = "material_light"
 
+    // SEÇİLEN TEMAYI KAYDEDER
+    // Tema tercihini cihazın yerel uygulama ayarlarına yazar.
     private fun saveMenuTheme(themeId: String) {
         selectedMenuThemeId = themeId
         getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
@@ -163,6 +171,8 @@ class MainActivity : AppCompatActivity() {
             .apply()
     }
 
+    // HEX RENK KODUNU ANDROID RENK DEĞERİNE DÖNÜŞTÜRÜR
+    // Geçersiz renk kodunda varsayılan gri rengi kullanır.
     private fun cfgColor(value: String): Int =
         try { Color.parseColor(value) } catch (_: Exception) { Color.GRAY }
 
@@ -175,6 +185,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zoomValue: TextView
     private lateinit var zoomSeekBar: SeekBar
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
+    // WEB SAYFASININ DOSYA SEÇME İSTEĞİNİ KARŞILAR
+    // Seçilen tek veya birden fazla dosyanın URI bilgisini WebView'e geri gönderir.
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -201,17 +213,22 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
+    // UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
     private var zoom = 100
     private var customItemHeight = 52
     private var customItemSpacing = 8
     private val zoomHandler = Handler(Looper.getMainLooper())
+    // YAKINLAŞTIRMA PANELİNİ ZAMAN AŞIMIYLA GİZLER
+    // Panel hâlâ mevcutsa görünürlüğünü kapatır.
     private val hideZoomPanel = Runnable {
         if (::zoomPanel.isInitialized) zoomPanel.visibility = View.GONE
     }
 
 
     @SuppressLint("SetJavaScriptEnabled")
+    // UYGULAMANIN BAŞLANGIÇ NOKTASI
+    // Ekranları, WebView'i, menüyü, ayarları ve başlangıç yüklemesini hazırlar.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -265,6 +282,8 @@ class MainActivity : AppCompatActivity() {
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
 
+            // WEB SAYFASI YÜKLENMEDEN ÖNCE ÇALIŞACAK JAVASCRIPT
+            // Site içindeki belirli öğeleri gizler ve bu davranışı DOM değişikliklerinde korur.
             if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
                 WebViewCompat.addDocumentStartJavaScript(
                     this,
@@ -374,6 +393,8 @@ class MainActivity : AppCompatActivity() {
 
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+            // WEB SAYFASI YÜKLEME VE HATA OLAYLARI
+            // Yükleme tamamlandığında yenileme göstergesini kapatır ve yakınlaştırmayı uygular.
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     refresh.isRefreshing = false
@@ -388,6 +409,8 @@ class MainActivity : AppCompatActivity() {
                     if (request?.isForMainFrame == true) refresh.isRefreshing = false
                 }
             }
+            // WEBVIEW'İN EK TARAYICI İŞLEMLERİ
+            // Web sayfasının dosya seçme penceresi isteğini Android dosya seçicisine aktarır.
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
                     webView: WebView?,
@@ -486,6 +509,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    // ANDROID BİLDİRİM KANALINI OLUŞTURUR
+    // Bildirimlerin kanal adını, önem seviyesini ve sesini tanımlar.
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -508,6 +533,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // GÜNCEL MENÜ AYARLARINI EKRANA UYGULAR
+    // Menüyü ve yakınlaştırma panelini yeni ölçü ve tema değerleriyle yeniden kurar.
     private fun applyMenuConfig() {
         if (!::drawerPanel.isInitialized || !::contentContainer.isInitialized ||
             !::zoomPanel.isInitialized
@@ -562,6 +589,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // YAN MENÜYÜ OLUŞTURUR
+    // Başlık, gezinme bağlantıları, ayarlar ve alt kontrol düğmelerini hazırlar.
     private fun buildDrawer(): LinearLayout {
         val theme = menuThemes.firstOrNull { it.id == selectedMenuThemeId }
             ?: menuThemes.first()
@@ -835,6 +864,8 @@ class MainActivity : AppCompatActivity() {
         return box
     }
 
+    // MENÜ SATIR ÖLÇÜLERİNİ KAYDEDER VE UYGULAR
+    // Satır yüksekliği ve satır aralığı tercihlerini saklar.
     private fun updateCustomMenuItems() {
         getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
             .edit()
@@ -849,6 +880,8 @@ class MainActivity : AppCompatActivity() {
         applyMenuConfig()
     }
 
+    // İÇERİK AYARLARI PENCERESİNİ GÖSTERİR
+    // Site üzerindeki uyarı mesajının gizlenmesi seçeneğini yönetir.
     private fun showContentSettingsPanel() {
         val preferences = getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
         var changed = false
@@ -947,6 +980,8 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // MENÜ ÖZELLEŞTİRME PENCERESİNİ GÖSTERİR
+    // Menü ölçülerinin ve renk temasının kullanıcı tarafından değiştirilmesini sağlar.
     private fun showMenuCustomizationPanel() {
         customItemHeight = menuConfig.itemHeight
         customItemSpacing = menuConfig.itemSpacing
@@ -1270,6 +1305,8 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setLayout(dp(340), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
+    // YAKINLAŞTIRMA PANELİNİ OLUŞTURUR
+    // Yüzde göstergesi, sıfırlama, eksi-artı düğmeleri ve kaydırıcıyı hazırlar.
     private fun buildZoomPanel(): LinearLayout {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1385,6 +1422,8 @@ class MainActivity : AppCompatActivity() {
         return panel
     }
 
+    // YAKINLAŞTIRMA PANELİNİ AÇAR
+    // Mevcut yüzdeyi gösterir ve panelin otomatik kapanma süresini başlatır.
     private fun showZoomPanel() {
         zoomSeekBar.progress = (zoom - 40) / 10
         updateZoomDisplay()
@@ -1392,6 +1431,8 @@ class MainActivity : AppCompatActivity() {
         scheduleZoomPanelHide()
     }
 
+    // YAKINLAŞTIRMA DEĞERİNİ SINIRLAR VE UYGULAR
+    // Değeri yüzde 40–200 aralığında tutar ve ekrandaki göstergeleri günceller.
     private fun setZoom(value: Int) {
         zoom = value.coerceIn(40, 200)
         zoomSeekBar.progress = (zoom - 40) / 10
@@ -1399,10 +1440,13 @@ class MainActivity : AppCompatActivity() {
         applyZoom()
     }
 
+    // YAKINLAŞTIRMA YÜZDESİNİ EKRANDA GÜNCELLER
     private fun updateZoomDisplay() {
         zoomValue.text = "$zoom%"
     }
 
+    // YAKINLAŞTIRMAYI WEB SAYFASINA UYGULAR
+    // WebView içindeki sayfanın CSS zoom değerini ayarlar.
     private fun applyZoom() {
         if (!::web.isInitialized) return
         web.evaluateJavascript(
@@ -1411,14 +1455,19 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // YAKINLAŞTIRMA PANELİNİN OTOMATİK KAPANMASINI PLANLAR
+    // Beş saniye sonra paneli gizler; yeni etkileşim süreyi yeniden başlatır.
     private fun scheduleZoomPanelHide() {
         zoomHandler.removeCallbacks(hideZoomPanel)
         zoomHandler.postDelayed(hideZoomPanel, 5000)
     }
 
+    // DP DEĞERİNİ CİHAZIN EKRAN YOĞUNLUĞUNA GÖRE PİKSELE ÇEVİRİR
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
+    // GERİ TUŞUNUN DAVRANIŞINI YÖNETİR
+    // Önce yakınlaştırma panelini, sonra menüyü kapatır; ikisi de kapalıysa uygulamadan çıkar.
     private fun handleBackPressed() {
         if (::zoomPanel.isInitialized && zoomPanel.visibility == View.VISIBLE) {
             zoomHandler.removeCallbacks(hideZoomPanel)
@@ -1430,6 +1479,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // UYGULAMA EKRANI KAPANIRKEN KAYNAKLARI TEMİZLER
+    // Bekleyen zamanlayıcıları ve dosya seçme geri çağrısını iptal eder.
     override fun onDestroy() {
         zoomHandler.removeCallbacks(hideZoomPanel)
         pendingFileCallback?.onReceiveValue(null)
