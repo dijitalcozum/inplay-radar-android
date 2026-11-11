@@ -1,2 +1,2 @@
-# inplay-radar-android
-Inplay Radar Android uygulaması.
+# inplay-radar
+Inplay Radar Android uygulaması
