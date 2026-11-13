@@ -1485,6 +1485,7 @@ class MainActivity : AppCompatActivity() {
         zoomHandler.removeCallbacks(hideZoomPanel)
         pendingFileCallback?.onReceiveValue(null)
         pendingFileCallback = null
+        CookieManager.getInstance().flush()
         super.onDestroy()
     }
 }
