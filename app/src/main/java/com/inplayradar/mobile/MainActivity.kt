@@ -1467,13 +1467,15 @@ class MainActivity : AppCompatActivity() {
         (value * resources.displayMetrics.density).toInt()
 
     // GERİ TUŞUNUN DAVRANIŞINI YÖNETİR
-    // Önce yakınlaştırma panelini, sonra menüyü kapatır; ikisi de kapalıysa uygulamadan çıkar.
+    // Önce yakınlaştırma panelini, sonra menüyü kapatır; ardından WebView geçmişine döner.
     private fun handleBackPressed() {
         if (::zoomPanel.isInitialized && zoomPanel.visibility == View.VISIBLE) {
             zoomHandler.removeCallbacks(hideZoomPanel)
             zoomPanel.visibility = View.GONE
         } else if (::drawer.isInitialized && drawer.isDrawerOpen(Gravity.START)) {
             drawer.closeDrawer(Gravity.START)
+        } else if (::web.isInitialized && web.canGoBack()) {
+            web.goBack()
         } else {
             finish()
         }
