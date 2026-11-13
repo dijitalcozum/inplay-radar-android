@@ -261,7 +261,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = true
         }
 
         drawer = DrawerLayout(this).apply {
