@@ -739,18 +739,9 @@ class MainActivity : AppCompatActivity() {
 
             if (label == menuDividerKey) {
                 val separatorLine = View(this).apply {
-                    background = GradientDrawable(
-                        GradientDrawable.Orientation.LEFT_RIGHT,
-                        intArrayOf(
-                            Color.TRANSPARENT,
-                            Color.rgb(190, 218, 255),
-                            Color.rgb(35, 125, 245),
-                            Color.rgb(190, 218, 255),
-                            Color.TRANSPARENT
-                        )
-                    ).apply { cornerRadius = dp(3).toFloat() }
+                    setBackgroundColor(cfgColor(theme.divider))
                 }
-                row.addView(separatorLine, LinearLayout.LayoutParams(0, dp(3), 1f).apply {
+                row.addView(separatorLine, LinearLayout.LayoutParams(0, dp(1), 1f).apply {
                     leftMargin = dp(8)
                     rightMargin = dp(8)
                 })
