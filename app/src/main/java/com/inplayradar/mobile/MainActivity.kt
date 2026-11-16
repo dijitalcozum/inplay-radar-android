@@ -44,6 +44,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
+private const val DEFAULT_MENU_ITEM_HEIGHT = 52
+private const val DEFAULT_MENU_ITEM_SPACING = 8
+private const val DEFAULT_ZOOM_PERCENT = 100
+
 class MainActivity : AppCompatActivity() {
     // MENÜ VE YAKINLAŞTIRMA GÖRÜNÜMÜNÜN AYARLARI
     // Boyut, boşluk, yazı ve renk değerlerini merkezi olarak tutar.
@@ -73,8 +77,8 @@ class MainActivity : AppCompatActivity() {
         val logoHeight: Int = 42,
         val closeWidth: Int = 40,
         val closeHeight: Int = 48,
-        val itemHeight: Int = 52,
-        val itemSpacing: Int = 8,
+        val itemHeight: Int = DEFAULT_MENU_ITEM_HEIGHT,
+        val itemSpacing: Int = DEFAULT_MENU_ITEM_SPACING,
         val iconAreaWidth: Int = 38,
         val iconSize: Int = 28,
         val fontSize: Int = 16,
@@ -106,11 +110,6 @@ class MainActivity : AppCompatActivity() {
         val zoomButtonTextSize: Int = 29,
         val zoomMinusWidth: Int = 44,
         val zoomPlusWidth: Int = 48,
-        val menuBorder: String = "#69707D",
-        val dividerColor: String = "#707784",
-        val selectedColor: String = "#0069E6",
-        val controlBackground: String = "#3F434D",
-        val controlBorder: String = "#69707D",
         val zoomBackground: String = "#FAF8FD",
         val zoomDivider: String = "#DAD7E0",
         val zoomTextColor: String = "#191919",
@@ -215,9 +214,7 @@ class MainActivity : AppCompatActivity() {
     }
     // UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
-    private var zoom = 100
-    private var customItemHeight = 52
-    private var customItemSpacing = 8
+    private var zoom = DEFAULT_ZOOM_PERCENT
     private val zoomHandler = Handler(Looper.getMainLooper())
     // YAKINLAŞTIRMA PANELİNİ ZAMAN AŞIMIYLA GİZLER
     // Panel hâlâ mevcutsa görünürlüğünü kapatır.
@@ -238,24 +235,21 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        val savedThemeId = getSharedPreferences(
+        val preferences = getSharedPreferences(
             "inplay_radar_preferences", MODE_PRIVATE
-        ).getString("menu_theme_id", null)
+        )
 
-        selectedMenuThemeId = savedThemeId
+        selectedMenuThemeId = preferences.getString("menu_theme_id", null)
             ?.takeIf { id -> menuThemes.any { it.id == id } }
             ?: "material_light"
 
-        val menuPreferences = getSharedPreferences(
-            "inplay_radar_preferences", MODE_PRIVATE
-        )
-        customItemHeight = menuPreferences.getInt("custom_item_height", 52)
-            .coerceIn(24, 100)
-        customItemSpacing = menuPreferences.getInt("custom_item_spacing", 8)
-            .coerceIn(0, 20)
         menuConfig = menuConfig.copy(
-            itemHeight = customItemHeight,
-            itemSpacing = customItemSpacing
+            itemHeight = preferences.getInt(
+                "custom_item_height", menuConfig.itemHeight
+            ).coerceIn(24, 100),
+            itemSpacing = preferences.getInt(
+                "custom_item_spacing", menuConfig.itemSpacing
+            ).coerceIn(0, 20)
         )
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -866,17 +860,21 @@ class MainActivity : AppCompatActivity() {
 
     // MENÜ SATIR ÖLÇÜLERİNİ KAYDEDER VE UYGULAR
     // Satır yüksekliği ve satır aralığı tercihlerini saklar.
-    private fun updateCustomMenuItems() {
+    private fun updateCustomMenuItems(
+        itemHeight: Int = menuConfig.itemHeight,
+        itemSpacing: Int = menuConfig.itemSpacing
+    ) {
+        menuConfig = menuConfig.copy(
+            itemHeight = itemHeight.coerceIn(24, 100),
+            itemSpacing = itemSpacing.coerceIn(0, 20)
+        )
+
         getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
             .edit()
-            .putInt("custom_item_height", customItemHeight)
-            .putInt("custom_item_spacing", customItemSpacing)
+            .putInt("custom_item_height", menuConfig.itemHeight)
+            .putInt("custom_item_spacing", menuConfig.itemSpacing)
             .apply()
 
-        menuConfig = menuConfig.copy(
-            itemHeight = customItemHeight,
-            itemSpacing = customItemSpacing
-        )
         applyMenuConfig()
     }
 
@@ -983,9 +981,6 @@ class MainActivity : AppCompatActivity() {
     // MENÜ ÖZELLEŞTİRME PENCERESİNİ GÖSTERİR
     // Menü ölçülerinin ve renk temasının kullanıcı tarafından değiştirilmesini sağlar.
     private fun showMenuCustomizationPanel() {
-        customItemHeight = menuConfig.itemHeight
-        customItemSpacing = menuConfig.itemSpacing
-
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(18), dp(18), dp(18))
@@ -1171,11 +1166,8 @@ class MainActivity : AppCompatActivity() {
             content.addView(
                 sizeCard(
                     "Satır Yüksekliği", 24, 100,
-                    { customItemHeight },
-                    {
-                        customItemHeight = it
-                        updateCustomMenuItems()
-                    }
+                    { menuConfig.itemHeight },
+                    { updateCustomMenuItems(itemHeight = it) }
                 ),
                 LinearLayout.LayoutParams(-1, dp(145)).apply {
                     bottomMargin = dp(10)
@@ -1185,11 +1177,8 @@ class MainActivity : AppCompatActivity() {
             content.addView(
                 sizeCard(
                     "Satır Aralığı", 0, 20,
-                    { customItemSpacing },
-                    {
-                        customItemSpacing = it
-                        updateCustomMenuItems()
-                    }
+                    { menuConfig.itemSpacing },
+                    { updateCustomMenuItems(itemSpacing = it) }
                 ),
                 LinearLayout.LayoutParams(-1, dp(145))
             )
@@ -1207,9 +1196,10 @@ class MainActivity : AppCompatActivity() {
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
-                    customItemHeight = 52
-                    customItemSpacing = 8
-                    updateCustomMenuItems()
+                    updateCustomMenuItems(
+                        itemHeight = DEFAULT_MENU_ITEM_HEIGHT,
+                        itemSpacing = DEFAULT_MENU_ITEM_SPACING
+                    )
                     showMeasurements()
                 }
             }
@@ -1349,7 +1339,7 @@ class MainActivity : AppCompatActivity() {
             isClickable = true
             isFocusable = true
             setOnClickListener {
-                setZoom(100)
+                setZoom(DEFAULT_ZOOM_PERCENT)
                 scheduleZoomPanelHide()
             }
         }
