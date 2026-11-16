@@ -158,6 +158,15 @@ class MainActivity : AppCompatActivity() {
     )
 
     private var selectedMenuThemeId = "material_light"
+    private val defaultMenuOrder = listOf(
+        "Ana Sayfa", "Canlı", "Bitmiş", "Favorilerim", "Stratejilerim",
+        "Sinyaller", "SSS", "Ayarlar", "Hakkında",
+        "Tam Ekran Yap", "Yakınlaştır", "Yenile"
+    )
+    private var menuOrder = defaultMenuOrder
+    private var menuOrderBeforeEditing = defaultMenuOrder
+    private var isMenuReorderMode = false
+    private var menuReorderControls: LinearLayout? = null
 
     // SEÇİLEN TEMAYI KAYDEDER
     // Tema tercihini cihazın yerel uygulama ayarlarına yazar.
@@ -244,6 +253,12 @@ class MainActivity : AppCompatActivity() {
         selectedMenuThemeId = preferences.getString("menu_theme_id", null)
             ?.takeIf { id -> menuThemes.any { it.id == id } }
             ?: "material_light"
+
+        val savedMenuOrder = preferences.getString("menu_order", null)
+            ?.split("|")
+            ?.filter { it in defaultMenuOrder }
+            .orEmpty()
+        menuOrder = (savedMenuOrder + defaultMenuOrder.filterNot { it in savedMenuOrder }).distinct()
 
         customItemHeight = preferences.getInt("custom_item_height", DEFAULT_MENU_ITEM_HEIGHT)
             .coerceIn(24, 100)
@@ -691,6 +706,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        var reorderRows: () -> Unit = {}
         fun item(label: String, icon: String, action: () -> Unit) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -725,11 +741,56 @@ class MainActivity : AppCompatActivity() {
                 topMargin = dp(menuConfig.menuTextY)
             })
 
-            row.setOnClickListener {
-                updateSelection(label)
-                action()
-                if (label != "Ayarlar") {
-                    drawer.closeDrawer(Gravity.START)
+            if (isMenuReorderMode) {
+                val handle = TextView(this).apply {
+                    text = "☰"
+                    textSize = 22f
+                    gravity = Gravity.CENTER
+                    setTextColor(cfgColor(theme.icon))
+                    contentDescription = "$label sıralama tutamacı"
+                    isLongClickable = true
+                    setOnLongClickListener {
+                        val clip = android.content.ClipData.newPlainText("menu_item", label)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            row.startDragAndDrop(clip, View.DragShadowBuilder(row), row, 0)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            row.startDrag(clip, View.DragShadowBuilder(row), row, 0)
+                        }
+                        true
+                    }
+                }
+                row.addView(handle, LinearLayout.LayoutParams(dp(44), -1))
+                row.setOnDragListener { target, event ->
+                    when (event.action) {
+                        android.view.DragEvent.ACTION_DRAG_STARTED ->
+                            event.clipDescription?.hasMimeType("text/plain") == true
+                        android.view.DragEvent.ACTION_DRAG_ENTERED -> { target.alpha = 0.65f; true }
+                        android.view.DragEvent.ACTION_DRAG_EXITED,
+                        android.view.DragEvent.ACTION_DRAG_ENDED -> { target.alpha = 1f; true }
+                        android.view.DragEvent.ACTION_DROP -> {
+                            target.alpha = 1f
+                            val moving = event.clipData.getItemAt(0).text?.toString()
+                            if (moving != null && moving != label) {
+                                val next = menuOrder.toMutableList()
+                                next.remove(moving)
+                                val index = next.indexOf(label)
+                                if (index >= 0) {
+                                    next.add(index, moving)
+                                    menuOrder = next
+                                    reorderRows()
+                                }
+                            }
+                            true
+                        }
+                        else -> true
+                    }
+                }
+            } else {
+                row.setOnClickListener {
+                    updateSelection(label)
+                    action()
+                    if (label != "Ayarlar") drawer.closeDrawer(Gravity.START)
                 }
             }
 
@@ -764,10 +825,16 @@ class MainActivity : AppCompatActivity() {
         item("Ayarlar", "⚙") {
             AlertDialog.Builder(this)
                 .setTitle("Ayarlar")
-                .setItems(arrayOf("Menüyü Özelleştir", "İçerik Ayarları")) { _, which ->
+                .setItems(arrayOf("Menü Sırasını Değiştir", "Menüyü Özelleştir", "İçerik Ayarları")) { _, which ->
                     when (which) {
-                        0 -> showMenuCustomizationPanel()
-                        1 -> showContentSettingsPanel()
+                        0 -> {
+                            menuOrderBeforeEditing = menuOrder.toList()
+                            isMenuReorderMode = true
+                            applyMenuConfig()
+                            showMenuReorderControls()
+                        }
+                        1 -> showMenuCustomizationPanel()
+                        2 -> showContentSettingsPanel()
                     }
                 }
                 .setNegativeButton("Kapat", null)
@@ -780,11 +847,6 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("Tamam", null)
                 .show()
         }
-
-        itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-            topMargin = dp(8)
-            bottomMargin = dp(8)
-        })
 
         item("Tam Ekran Yap", "⛶") {
             val immersive =
@@ -804,7 +866,83 @@ class MainActivity : AppCompatActivity() {
             loadingIndicator.visibility = View.VISIBLE
             web.reload()
         }
+        reorderRows = {
+            itemsContainer.removeAllViews()
+            menuOrder.forEach { label ->
+                if (label == "Tam Ekran Yap" && !isMenuReorderMode) {
+                    itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
+                        topMargin = dp(8)
+                        bottomMargin = dp(8)
+                    })
+                }
+                menuRows[label]?.let { row ->
+                    itemsContainer.addView(row, LinearLayout.LayoutParams(-1, dp(menuConfig.itemHeight)).apply {
+                        bottomMargin = dp(menuConfig.itemSpacing)
+                    })
+                }
+            }
+        }
+        reorderRows()
         return box
+    }
+
+    // MENÜ SIRALAMA KONTROLLERİNİ GÖSTERİR
+    // Kaydetme veya vazgeçme işlemlerini menü açıkken yönetir.
+    private fun showMenuReorderControls() {
+        menuReorderControls?.let(contentContainer::removeView)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), Color.rgb(211, 224, 242))
+            }
+            elevation = dp(8).toFloat()
+        }
+        val save = TextView(this).apply {
+            text = "✓  Sıralamayı Kaydet"
+            textSize = 14f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(25, 105, 210))
+                cornerRadius = dp(12).toFloat()
+            }
+            setOnClickListener {
+                getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
+                    .edit().putString("menu_order", menuOrder.joinToString("|")).apply()
+                isMenuReorderMode = false
+                menuReorderControls?.let(contentContainer::removeView)
+                menuReorderControls = null
+                applyMenuConfig()
+            }
+        }
+        val cancel = TextView(this).apply {
+            text = "Vazgeç"
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(71, 85, 105))
+            setPadding(dp(10), dp(12), dp(8), dp(12))
+            setOnClickListener {
+                menuOrder = menuOrderBeforeEditing.toList()
+                isMenuReorderMode = false
+                menuReorderControls?.let(contentContainer::removeView)
+                menuReorderControls = null
+                applyMenuConfig()
+            }
+        }
+        panel.addView(save)
+        panel.addView(cancel)
+        menuReorderControls = panel
+        contentContainer.addView(panel, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.END or Gravity.CENTER_VERTICAL
+        ).apply { rightMargin = dp(12) })
     }
 
     // MENÜ SATIR ÖLÇÜLERİNİ KAYDEDER VE UYGULAR
