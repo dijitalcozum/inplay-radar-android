@@ -40,7 +40,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
@@ -176,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         try { Color.parseColor(value) } catch (_: Exception) { Color.GRAY }
 
     private lateinit var drawer: DrawerLayout
-    private lateinit var refresh: SwipeRefreshLayout
+    private lateinit var loadingIndicator: android.widget.ProgressBar
     private lateinit var web: WebView
     private lateinit var zoomPanel: LinearLayout
     private lateinit var drawerPanel: LinearLayout
@@ -266,9 +265,6 @@ class MainActivity : AppCompatActivity() {
             setScrimColor(0x99000000.toInt())
         }
 
-        refresh = SwipeRefreshLayout(this).apply {
-            isEnabled = false
-        }
         web = WebView(this).apply {
             setBackgroundColor(Color.WHITE)
             settings.javaScriptEnabled = true
@@ -396,7 +392,7 @@ class MainActivity : AppCompatActivity() {
             // Yükleme tamamlandığında yenileme göstergesini kapatır ve yakınlaştırmayı uygular.
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    refresh.isRefreshing = false
+                    loadingIndicator.visibility = View.GONE
                     applyZoom()
                 }
 
@@ -405,7 +401,7 @@ class MainActivity : AppCompatActivity() {
                     request: WebResourceRequest?,
                     error: WebResourceError?
                 ) {
-                    if (request?.isForMainFrame == true) refresh.isRefreshing = false
+                    if (request?.isForMainFrame == true) loadingIndicator.visibility = View.GONE
                 }
             }
             // WEBVIEW'İN EK TARAYICI İŞLEMLERİ
@@ -461,11 +457,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        refresh.setColorSchemeResources(android.R.color.darker_gray)
-        refresh.addView(web, ViewGroup.LayoutParams(-1, -1))
-
         contentContainer = FrameLayout(this)
-        contentContainer.addView(refresh, FrameLayout.LayoutParams(-1, -1))
+        contentContainer.addView(web, FrameLayout.LayoutParams(-1, -1))
+
+        loadingIndicator = android.widget.ProgressBar(this).apply {
+            visibility = View.GONE
+            isIndeterminate = true
+        }
+        contentContainer.addView(
+            loadingIndicator,
+            FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER)
+        )
         drawer.addView(contentContainer, DrawerLayout.LayoutParams(-1, -1))
 
         drawerPanel = buildDrawer()
@@ -799,7 +801,7 @@ class MainActivity : AppCompatActivity() {
         }
         item("Yakınlaştır", "⌕") { showZoomPanel() }
         item("Yenile", "↻") {
-            refresh.isRefreshing = true
+            loadingIndicator.visibility = View.VISIBLE
             web.reload()
         }
         return box
