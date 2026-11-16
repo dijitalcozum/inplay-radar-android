@@ -889,7 +889,7 @@ class MainActivity : AppCompatActivity() {
     // MENÜ SIRALAMA KONTROLLERİNİ GÖSTERİR
     // Kaydetme veya vazgeçme işlemlerini menü açıkken yönetir.
     private fun showMenuReorderControls() {
-        menuReorderControls?.let(contentContainer::removeView)
+        menuReorderControls?.let(drawer::removeView)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -916,7 +916,7 @@ class MainActivity : AppCompatActivity() {
                 getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
                     .edit().putString("menu_order", menuOrder.joinToString("|")).apply()
                 isMenuReorderMode = false
-                menuReorderControls?.let(contentContainer::removeView)
+                menuReorderControls?.let(drawer::removeView)
                 menuReorderControls = null
                 applyMenuConfig()
             }
@@ -930,7 +930,7 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 menuOrder = menuOrderBeforeEditing.toList()
                 isMenuReorderMode = false
-                menuReorderControls?.let(contentContainer::removeView)
+                menuReorderControls?.let(drawer::removeView)
                 menuReorderControls = null
                 applyMenuConfig()
             }
@@ -938,11 +938,13 @@ class MainActivity : AppCompatActivity() {
         panel.addView(save)
         panel.addView(cancel)
         menuReorderControls = panel
-        contentContainer.addView(panel, FrameLayout.LayoutParams(
+        drawer.addView(panel, DrawerLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.END or Gravity.CENTER_VERTICAL
-        ).apply { rightMargin = dp(12) })
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            marginEnd = dp(12)
+        })
     }
 
     // MENÜ SATIR ÖLÇÜLERİNİ KAYDEDER VE UYGULAR
