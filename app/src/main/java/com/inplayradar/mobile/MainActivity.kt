@@ -167,6 +167,7 @@ class MainActivity : AppCompatActivity() {
     private var menuOrderBeforeEditing = defaultMenuOrder
     private var isMenuReorderMode = false
     private var menuReorderControls: LinearLayout? = null
+    private var navigationBarBottomInset = 0
 
     // SEÇİLEN TEMAYI KAYDEDER
     // Tema tercihini cihazın yerel uygulama ayarlarına yazar.
@@ -508,11 +509,21 @@ class MainActivity : AppCompatActivity() {
         }
         contentContainer.addView(zoomPanel, zoomPanelParams)
         ViewCompat.setOnApplyWindowInsetsListener(contentContainer) { _, insets ->
-            val navigationBarHeight =
+            navigationBarBottomInset =
                 insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
             val params = zoomPanel.layoutParams as FrameLayout.LayoutParams
-            params.bottomMargin = navigationBarHeight + dp(32)
+            params.bottomMargin = navigationBarBottomInset + dp(32)
             zoomPanel.layoutParams = params
+
+            if (::drawerPanel.isInitialized) {
+                drawerPanel.setPadding(
+                    drawerPanel.paddingLeft,
+                    drawerPanel.paddingTop,
+                    drawerPanel.paddingRight,
+                    dp(menuConfig.menuBottomPadding) + navigationBarBottomInset
+                )
+            }
             insets
         }
         ViewCompat.requestApplyInsets(contentContainer)
@@ -610,7 +621,7 @@ class MainActivity : AppCompatActivity() {
             ?: menuThemes.first()
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(menuConfig.menuPadding), dp(menuConfig.menuTopPadding), dp(menuConfig.menuPadding), dp(menuConfig.menuBottomPadding))
+            setPadding(dp(menuConfig.menuPadding), dp(menuConfig.menuTopPadding), dp(menuConfig.menuPadding), dp(menuConfig.menuBottomPadding) + navigationBarBottomInset)
             background = GradientDrawable().apply {
                 setColor(cfgColor(theme.background))
                 setStroke(dp(1), cfgColor(theme.border))
