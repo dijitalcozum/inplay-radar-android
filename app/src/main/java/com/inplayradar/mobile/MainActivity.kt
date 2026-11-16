@@ -44,10 +44,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
-private const val DEFAULT_MENU_ITEM_HEIGHT = 52
-private const val DEFAULT_MENU_ITEM_SPACING = 8
-private const val DEFAULT_ZOOM_PERCENT = 100
-
 class MainActivity : AppCompatActivity() {
     // MENÜ VE YAKINLAŞTIRMA GÖRÜNÜMÜNÜN AYARLARI
     // Boyut, boşluk, yazı ve renk değerlerini merkezi olarak tutar.
@@ -212,8 +208,14 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
-    // UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
+// UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
+
+    private companion object {
+        const val DEFAULT_MENU_ITEM_HEIGHT = 52
+        const val DEFAULT_MENU_ITEM_SPACING = 8
+        const val DEFAULT_ZOOM_PERCENT = 100
+    }
     private var zoom = DEFAULT_ZOOM_PERCENT
     private val zoomHandler = Handler(Looper.getMainLooper())
     // YAKINLAŞTIRMA PANELİNİ ZAMAN AŞIMIYLA GİZLER
