@@ -158,9 +158,10 @@ class MainActivity : AppCompatActivity() {
     )
 
     private var selectedMenuThemeId = "material_light"
+    private val menuDividerKey = "__MENU_DIVIDER__"
     private val defaultMenuOrder = listOf(
         "Ana Sayfa", "Canlı", "Bitmiş", "Favorilerim", "Stratejilerim",
-        "Sinyaller", "SSS", "Ayarlar", "Hakkında",
+        "Sinyaller", "SSS", "Ayarlar", "Hakkında", menuDividerKey,
         "Tam Ekran Yap", "Yakınlaştır", "Yenile"
     )
     private var menuOrder = defaultMenuOrder
@@ -259,7 +260,15 @@ class MainActivity : AppCompatActivity() {
             ?.split("|")
             ?.filter { it in defaultMenuOrder }
             .orEmpty()
-        menuOrder = (savedMenuOrder + defaultMenuOrder.filterNot { it in savedMenuOrder }).distinct()
+        val restoredMenuOrder = (savedMenuOrder + defaultMenuOrder.filterNot { it in savedMenuOrder })
+            .distinct()
+            .toMutableList()
+        if (menuDividerKey !in savedMenuOrder) {
+            restoredMenuOrder.remove(menuDividerKey)
+            val aboutIndex = restoredMenuOrder.indexOf("Hakkında")
+            restoredMenuOrder.add(if (aboutIndex >= 0) aboutIndex + 1 else restoredMenuOrder.size, menuDividerKey)
+        }
+        menuOrder = restoredMenuOrder
 
         customItemHeight = preferences.getInt("custom_item_height", DEFAULT_MENU_ITEM_HEIGHT)
             .coerceIn(24, 100)
@@ -728,29 +737,48 @@ class MainActivity : AppCompatActivity() {
                 isFocusable = true
             }
 
-            val iconView = TextView(this).apply {
-                text = icon
-                textSize = menuConfig.iconSize.toFloat()
-                gravity = Gravity.CENTER
-                setTextColor(cfgColor(theme.icon))
-            }
-            row.addView(iconView, LinearLayout.LayoutParams(dp(menuConfig.iconAreaWidth), -1).apply {
-                leftMargin = dp(menuConfig.menuIconX)
-                topMargin = dp(menuConfig.menuIconY)
-            })
+            if (label == menuDividerKey) {
+                val separatorLine = View(this).apply {
+                    background = GradientDrawable(
+                        GradientDrawable.Orientation.LEFT_RIGHT,
+                        intArrayOf(
+                            Color.TRANSPARENT,
+                            Color.rgb(190, 218, 255),
+                            Color.rgb(35, 125, 245),
+                            Color.rgb(190, 218, 255),
+                            Color.TRANSPARENT
+                        )
+                    ).apply { cornerRadius = dp(3).toFloat() }
+                }
+                row.addView(separatorLine, LinearLayout.LayoutParams(0, dp(3), 1f).apply {
+                    leftMargin = dp(8)
+                    rightMargin = dp(8)
+                })
+            } else {
+                val iconView = TextView(this).apply {
+                    text = icon
+                    textSize = menuConfig.iconSize.toFloat()
+                    gravity = Gravity.CENTER
+                    setTextColor(cfgColor(theme.icon))
+                }
+                row.addView(iconView, LinearLayout.LayoutParams(dp(menuConfig.iconAreaWidth), -1).apply {
+                    leftMargin = dp(menuConfig.menuIconX)
+                    topMargin = dp(menuConfig.menuIconY)
+                })
 
-            val labelView = TextView(this).apply {
-                text = label
-                textSize = menuConfig.fontSize.toFloat()
-                setTextColor(cfgColor(theme.text))
-                setPadding(dp(menuConfig.itemTextPadding), 0, 0, 0)
-                gravity = Gravity.CENTER_VERTICAL
-                maxLines = 1
+                val labelView = TextView(this).apply {
+                    text = label
+                    textSize = menuConfig.fontSize.toFloat()
+                    setTextColor(cfgColor(theme.text))
+                    setPadding(dp(menuConfig.itemTextPadding), 0, 0, 0)
+                    gravity = Gravity.CENTER_VERTICAL
+                    maxLines = 1
+                }
+                row.addView(labelView, LinearLayout.LayoutParams(0, -1, 1f).apply {
+                    leftMargin = dp(menuConfig.menuTextX)
+                    topMargin = dp(menuConfig.menuTextY)
+                })
             }
-            row.addView(labelView, LinearLayout.LayoutParams(0, -1, 1f).apply {
-                leftMargin = dp(menuConfig.menuTextX)
-                topMargin = dp(menuConfig.menuTextY)
-            })
 
             if (isMenuReorderMode) {
                 val handle = TextView(this).apply {
@@ -758,7 +786,7 @@ class MainActivity : AppCompatActivity() {
                     textSize = 22f
                     gravity = Gravity.CENTER
                     setTextColor(cfgColor(theme.icon))
-                    contentDescription = "$label sıralama tutamacı"
+                    contentDescription = if (label == menuDividerKey) "Ayırıcı sıralama tutamacı" else "$label sıralama tutamacı"
                     isLongClickable = true
                     setOnLongClickListener {
                         val clip = android.content.ClipData.newPlainText("menu_item", label)
@@ -806,10 +834,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             menuRows[label] = row
+            val rowHeight = if (label == menuDividerKey) dp(20) else dp(menuConfig.itemHeight)
             itemsContainer.addView(
                 row,
-                LinearLayout.LayoutParams(-1, dp(menuConfig.itemHeight)).apply {
-                    bottomMargin = dp(menuConfig.itemSpacing)
+                LinearLayout.LayoutParams(-1, rowHeight).apply {
+                    bottomMargin = if (label == menuDividerKey) dp(8) else dp(menuConfig.itemSpacing)
                 }
             )
         }
@@ -851,6 +880,8 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton("Kapat", null)
                 .show()
         }
+        item(menuDividerKey, "") {}
+
         item("Hakkında", "ⓘ") {
             AlertDialog.Builder(this)
                 .setTitle("Inplay Radar")
@@ -881,14 +912,9 @@ class MainActivity : AppCompatActivity() {
             itemsContainer.removeAllViews()
             menuOrder.forEach { label ->
                 menuRows[label]?.let { row ->
-                    itemsContainer.addView(row, LinearLayout.LayoutParams(-1, dp(menuConfig.itemHeight)).apply {
-                        bottomMargin = dp(menuConfig.itemSpacing)
-                    })
-                }
-                if (label == "Hakkında") {
-                    itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-                        topMargin = dp(8)
-                        bottomMargin = dp(8)
+                    val rowHeight = if (label == menuDividerKey) dp(20) else dp(menuConfig.itemHeight)
+                    itemsContainer.addView(row, LinearLayout.LayoutParams(-1, rowHeight).apply {
+                        bottomMargin = if (label == menuDividerKey) dp(8) else dp(menuConfig.itemSpacing)
                     })
                 }
             }
