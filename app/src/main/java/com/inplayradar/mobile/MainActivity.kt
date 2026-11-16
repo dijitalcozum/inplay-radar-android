@@ -930,7 +930,7 @@ class MainActivity : AppCompatActivity() {
 
         val footer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, 0)
+            setPadding(0, 0, 0, dp(8))
             setBackgroundColor(Color.TRANSPARENT)
         }
 
