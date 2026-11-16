@@ -889,62 +889,84 @@ class MainActivity : AppCompatActivity() {
     // MENÜ SIRALAMA KONTROLLERİNİ GÖSTERİR
     // Kaydetme veya vazgeçme işlemlerini menü açıkken yönetir.
     private fun showMenuReorderControls() {
-        menuReorderControls?.let { drawer.removeView(it) }
-        val panel = LinearLayout(this).apply {
+        menuReorderControls?.let { drawerPanel.removeView(it) }
+
+        val footer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(8), 0, 0)
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        val separator = View(this).apply {
+            setBackgroundColor(Color.rgb(220, 225, 232))
+        }
+        footer.addView(separator, LinearLayout.LayoutParams(-1, dp(1)).apply {
+            bottomMargin = dp(12)
+        })
+
+        val buttons = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(dp(10), dp(8), dp(10), dp(8))
-            background = GradientDrawable().apply {
-                setColor(Color.WHITE)
-                cornerRadius = dp(16).toFloat()
-                setStroke(dp(1), Color.rgb(211, 224, 242))
-            }
-            elevation = dp(8).toFloat()
         }
+
+        val cancel = TextView(this).apply {
+            text = "✕  Vazgeç"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(45, 58, 75))
+            setPadding(dp(8), dp(14), dp(8), dp(14))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(245, 247, 250))
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(1), Color.rgb(205, 215, 228))
+            }
+            setOnClickListener {
+                menuOrder = menuOrderBeforeEditing.toList()
+                isMenuReorderMode = false
+                menuReorderControls?.let { drawerPanel.removeView(it) }
+                menuReorderControls = null
+                applyMenuConfig()
+            }
+        }
+
         val save = TextView(this).apply {
-            text = "✓  Sıralamayı Kaydet"
+            text = "✓  Kaydet"
             textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
-            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setPadding(dp(8), dp(14), dp(8), dp(14))
             background = GradientDrawable().apply {
                 setColor(Color.rgb(25, 105, 210))
                 cornerRadius = dp(12).toFloat()
             }
             setOnClickListener {
                 getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
-                    .edit().putString("menu_order", menuOrder.joinToString("|")).apply()
+                    .edit()
+                    .putString("menu_order", menuOrder.joinToString("|"))
+                    .apply()
                 isMenuReorderMode = false
-                menuReorderControls?.let { drawer.removeView(it) }
+                menuReorderControls?.let { drawerPanel.removeView(it) }
                 menuReorderControls = null
                 applyMenuConfig()
             }
         }
-        val cancel = TextView(this).apply {
-            text = "Vazgeç"
-            textSize = 13f
-            gravity = Gravity.CENTER
-            setTextColor(Color.rgb(71, 85, 105))
-            setPadding(dp(10), dp(12), dp(8), dp(12))
-            setOnClickListener {
-                menuOrder = menuOrderBeforeEditing.toList()
-                isMenuReorderMode = false
-                menuReorderControls?.let { drawer.removeView(it) }
-                menuReorderControls = null
-                applyMenuConfig()
-            }
-        }
-        panel.addView(save)
-        panel.addView(cancel)
-        menuReorderControls = panel
-        drawer.addView(panel, DrawerLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.END or Gravity.CENTER_VERTICAL
-            marginEnd = dp(12)
+
+        buttons.addView(cancel, LinearLayout.LayoutParams(0, dp(54), 1f).apply {
+            rightMargin = dp(6)
         })
+        buttons.addView(save, LinearLayout.LayoutParams(0, dp(54), 1f).apply {
+            leftMargin = dp(6)
+        })
+        footer.addView(buttons, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        menuReorderControls = footer
+        drawerPanel.addView(
+            footer,
+            LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(4)
+            }
+        )
     }
 
     // MENÜ SATIR ÖLÇÜLERİNİ KAYDEDER VE UYGULAR
