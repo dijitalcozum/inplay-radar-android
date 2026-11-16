@@ -930,27 +930,9 @@ class MainActivity : AppCompatActivity() {
 
         val footer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(8), 0, 0)
+            setPadding(0, 0, 0, 0)
             setBackgroundColor(Color.TRANSPARENT)
         }
-
-        val separator = View(this).apply {
-            background = GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(
-                    Color.TRANSPARENT,
-                    Color.rgb(190, 218, 255),
-                    Color.rgb(35, 125, 245),
-                    Color.rgb(190, 218, 255),
-                    Color.TRANSPARENT
-                )
-            ).apply {
-                cornerRadius = dp(3).toFloat()
-            }
-        }
-        footer.addView(separator, LinearLayout.LayoutParams(-1, dp(3)).apply {
-            bottomMargin = dp(16)
-        })
 
         val buttons = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
