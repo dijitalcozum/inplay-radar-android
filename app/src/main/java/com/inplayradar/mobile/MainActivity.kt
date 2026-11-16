@@ -889,7 +889,7 @@ class MainActivity : AppCompatActivity() {
     // MENÜ SIRALAMA KONTROLLERİNİ GÖSTERİR
     // Kaydetme veya vazgeçme işlemlerini menü açıkken yönetir.
     private fun showMenuReorderControls() {
-        menuReorderControls?.let(drawer::removeView)
+        menuReorderControls?.let { drawer.removeView(it) }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -916,7 +916,7 @@ class MainActivity : AppCompatActivity() {
                 getSharedPreferences("inplay_radar_preferences", MODE_PRIVATE)
                     .edit().putString("menu_order", menuOrder.joinToString("|")).apply()
                 isMenuReorderMode = false
-                menuReorderControls?.let(drawer::removeView)
+                menuReorderControls?.let { drawer.removeView(it) }
                 menuReorderControls = null
                 applyMenuConfig()
             }
@@ -930,7 +930,7 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 menuOrder = menuOrderBeforeEditing.toList()
                 isMenuReorderMode = false
-                menuReorderControls?.let(drawer::removeView)
+                menuReorderControls?.let { drawer.removeView(it) }
                 menuReorderControls = null
                 applyMenuConfig()
             }
