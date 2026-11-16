@@ -909,10 +909,21 @@ class MainActivity : AppCompatActivity() {
         }
 
         val separator = View(this).apply {
-            setBackgroundColor(Color.rgb(220, 225, 232))
+            background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(
+                    Color.TRANSPARENT,
+                    Color.rgb(190, 218, 255),
+                    Color.rgb(35, 125, 245),
+                    Color.rgb(190, 218, 255),
+                    Color.TRANSPARENT
+                )
+            ).apply {
+                cornerRadius = dp(3).toFloat()
+            }
         }
-        footer.addView(separator, LinearLayout.LayoutParams(-1, dp(1)).apply {
-            bottomMargin = dp(12)
+        footer.addView(separator, LinearLayout.LayoutParams(-1, dp(3)).apply {
+            bottomMargin = dp(16)
         })
 
         val buttons = LinearLayout(this).apply {
