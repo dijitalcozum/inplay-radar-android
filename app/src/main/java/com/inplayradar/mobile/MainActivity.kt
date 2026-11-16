@@ -869,15 +869,15 @@ class MainActivity : AppCompatActivity() {
         reorderRows = {
             itemsContainer.removeAllViews()
             menuOrder.forEach { label ->
-                if (label == "Tam Ekran Yap" && !isMenuReorderMode) {
-                    itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
-                        topMargin = dp(8)
-                        bottomMargin = dp(8)
-                    })
-                }
                 menuRows[label]?.let { row ->
                     itemsContainer.addView(row, LinearLayout.LayoutParams(-1, dp(menuConfig.itemHeight)).apply {
                         bottomMargin = dp(menuConfig.itemSpacing)
+                    })
+                }
+                if (label == "Hakkında") {
+                    itemsContainer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply {
+                        topMargin = dp(8)
+                        bottomMargin = dp(8)
                     })
                 }
             }
