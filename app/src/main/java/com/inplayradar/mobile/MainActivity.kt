@@ -979,7 +979,10 @@ class MainActivity : AppCompatActivity() {
         buttons.addView(save, LinearLayout.LayoutParams(0, dp(54), 1f).apply {
             leftMargin = dp(6)
         })
-        footer.addView(buttons, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+        footer.addView(buttons, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(4)
+            bottomMargin = dp(1)
+        })
 
         menuReorderControls = footer
         drawerPanel.addView(
