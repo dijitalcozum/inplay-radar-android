@@ -266,7 +266,9 @@ class MainActivity : AppCompatActivity() {
             setScrimColor(0x99000000.toInt())
         }
 
-        refresh = SwipeRefreshLayout(this)
+        refresh = SwipeRefreshLayout(this).apply {
+            isEnabled = false
+        }
         web = WebView(this).apply {
             setBackgroundColor(Color.WHITE)
             settings.javaScriptEnabled = true
@@ -460,8 +462,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         refresh.setColorSchemeResources(android.R.color.darker_gray)
-        refresh.setOnChildScrollUpCallback { _, _ -> web.scrollY > 0 }
-        refresh.setOnRefreshListener { web.reload() }
         refresh.addView(web, ViewGroup.LayoutParams(-1, -1))
 
         contentContainer = FrameLayout(this)
@@ -784,63 +784,7 @@ class MainActivity : AppCompatActivity() {
             bottomMargin = dp(8)
         })
 
-        val controls = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-
-        fun control(label: String, icon: String, action: () -> Unit) {
-            val button = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                setPadding(dp(4), dp(menuConfig.controlPadding), dp(4), dp(menuConfig.controlPadding))
-                background = GradientDrawable().apply {
-                    setColor(cfgColor(theme.controlBackground))
-                    setStroke(dp(1), cfgColor(theme.controlBorder))
-                    cornerRadius = dp(12).toFloat()
-                }
-                isClickable = true
-                isFocusable = true
-                setOnClickListener {
-                    action()
-                    drawer.closeDrawer(Gravity.START)
-                }
-            }
-
-            val iconView = TextView(this).apply {
-                text = icon
-                textSize = menuConfig.controlIconSize.toFloat()
-                gravity = Gravity.CENTER
-                setTextColor(cfgColor(theme.icon))
-            }
-            button.addView(iconView, LinearLayout.LayoutParams(-1, dp(menuConfig.controlIconHeight)).apply {
-                leftMargin = dp(menuConfig.controlIconX)
-                topMargin = dp(menuConfig.controlIconY)
-            })
-
-            val labelView = TextView(this).apply {
-                text = label
-                textSize = menuConfig.controlLabelSize.toFloat()
-                gravity = Gravity.CENTER
-                setTextColor(cfgColor(theme.text))
-                maxLines = 1
-            }
-            button.addView(labelView, LinearLayout.LayoutParams(-1, dp(menuConfig.controlLabelHeight)).apply {
-                leftMargin = dp(menuConfig.controlTextX)
-                topMargin = dp(menuConfig.controlTextY)
-            })
-
-            controls.addView(
-                button,
-                LinearLayout.LayoutParams(0, dp(menuConfig.controlHeight), 1f).apply {
-                    leftMargin = dp(menuConfig.controlButtonX + if (controls.childCount > 0) 8 else 0)
-                    topMargin = dp(menuConfig.controlButtonY)
-                }
-            )
-        }
-
-        control("Yakınlaştır", "⌕") { showZoomPanel() }
-        control("Tam Ekran Yap", "⛶") {
+        item("Tam Ekran Yap", "⛶") {
             val immersive =
                 (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) == 0
             window.decorView.systemUiVisibility = if (immersive) {
@@ -853,11 +797,11 @@ class MainActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             }
         }
-
-        itemsContainer.addView(controls, LinearLayout.LayoutParams(-1, dp(menuConfig.controlHeight)).apply {
-            topMargin = dp(menuConfig.controlTopMargin)
-            bottomMargin = dp(menuConfig.controlBottomMargin)
-        })
+        item("Yakınlaştır", "⌕") { showZoomPanel() }
+        item("Yenile", "↻") {
+            refresh.isRefreshing = true
+            web.reload()
+        }
         return box
     }
 
