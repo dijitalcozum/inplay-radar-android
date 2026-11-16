@@ -215,9 +215,9 @@ class MainActivity : AppCompatActivity() {
 // UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
 
-    private var zoom = DEFAULT_ZOOM_PERCENT
     private var customItemHeight = DEFAULT_MENU_ITEM_HEIGHT
     private var customItemSpacing = DEFAULT_MENU_ITEM_SPACING
+    private var zoom = DEFAULT_ZOOM_PERCENT
     private val zoomHandler = Handler(Looper.getMainLooper())
     // YAKINLAŞTIRMA PANELİNİ ZAMAN AŞIMIYLA GİZLER
     // Panel hâlâ mevcutsa görünürlüğünü kapatır.
