@@ -44,9 +44,9 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
-private const val DEFAULT_ZOOM_PERCENT = 100
 private const val DEFAULT_MENU_ITEM_HEIGHT = 52
 private const val DEFAULT_MENU_ITEM_SPACING = 8
+private const val DEFAULT_ZOOM_PERCENT = 100
 
 class MainActivity : AppCompatActivity() {
     // MENÜ VE YAKINLAŞTIRMA GÖRÜNÜMÜNÜN AYARLARI
