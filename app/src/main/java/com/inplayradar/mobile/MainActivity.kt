@@ -44,6 +44,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
+private const val DEFAULT_ZOOM = 100
+private const val DEFAULT_ITEM_HEIGHT = 52
+private const val DEFAULT_ITEM_SPACING = 8
+
 class MainActivity : AppCompatActivity() {
     // MENÜ VE YAKINLAŞTIRMA GÖRÜNÜMÜNÜN AYARLARI
     // Boyut, boşluk, yazı ve renk değerlerini merkezi olarak tutar.
@@ -73,8 +77,8 @@ class MainActivity : AppCompatActivity() {
         val logoHeight: Int = 42,
         val closeWidth: Int = 40,
         val closeHeight: Int = 48,
-        val itemHeight: Int = 52,
-        val itemSpacing: Int = 8,
+        val itemHeight: Int = DEFAULT_ITEM_HEIGHT,
+        val itemSpacing: Int = DEFAULT_ITEM_SPACING,
         val iconAreaWidth: Int = 38,
         val iconSize: Int = 28,
         val fontSize: Int = 16,
@@ -211,9 +215,9 @@ class MainActivity : AppCompatActivity() {
 // UYGULAMANIN AÇILIŞTA YÜKLEDİĞİ ANA SAYFA ADRESİ
     private val homeUrl = "https://inplayflux.com/live-scanner?page=live&lang=tr"
 
-    private var zoom = 100
-    private var customItemHeight = 52
-    private var customItemSpacing = 8
+    private var zoom = DEFAULT_ZOOM
+    private var customItemHeight = DEFAULT_ITEM_HEIGHT
+    private var customItemSpacing = DEFAULT_ITEM_SPACING
     private val zoomHandler = Handler(Looper.getMainLooper())
     // YAKINLAŞTIRMA PANELİNİ ZAMAN AŞIMIYLA GİZLER
     // Panel hâlâ mevcutsa görünürlüğünü kapatır.
@@ -242,9 +246,9 @@ class MainActivity : AppCompatActivity() {
             ?.takeIf { id -> menuThemes.any { it.id == id } }
             ?: "material_light"
 
-        customItemHeight = preferences.getInt("custom_item_height", 52)
+        customItemHeight = preferences.getInt("custom_item_height", DEFAULT_ITEM_HEIGHT)
             .coerceIn(24, 100)
-        customItemSpacing = preferences.getInt("custom_item_spacing", 8)
+        customItemSpacing = preferences.getInt("custom_item_spacing", DEFAULT_ITEM_SPACING)
             .coerceIn(0, 20)
         menuConfig = menuConfig.copy(
             itemHeight = customItemHeight,
@@ -1197,8 +1201,8 @@ class MainActivity : AppCompatActivity() {
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
-                    customItemHeight = 52
-                    customItemSpacing = 8
+                    customItemHeight = DEFAULT_ITEM_HEIGHT
+                    customItemSpacing = DEFAULT_ITEM_SPACING
                     updateCustomMenuItems()
                     showMeasurements()
                 }
@@ -1339,7 +1343,7 @@ class MainActivity : AppCompatActivity() {
             isClickable = true
             isFocusable = true
             setOnClickListener {
-                setZoom(100)
+                setZoom(DEFAULT_ZOOM)
                 scheduleZoomPanelHide()
             }
         }
