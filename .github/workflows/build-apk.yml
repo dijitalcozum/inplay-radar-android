@@ -9,7 +9,6 @@ on:
         type: choice
         default: "Test et"
         options:
-          - "Test et"
           - "Mevcut sürümü güncelle"
           - "Yeni sürümü yayınla"
       release_version:
@@ -26,6 +25,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout source
@@ -49,10 +49,6 @@ jobs:
           fi
 
           case "$RELEASE_ACTION" in
-            "Test et")
-              RELEASE_VERSION="$CURRENT_VERSION"
-              NEXT_CODE="$CURRENT_CODE"
-              ;;
             "Mevcut sürümü güncelle")
               RELEASE_VERSION="$CURRENT_VERSION"
               NEXT_CODE="$CURRENT_CODE"
