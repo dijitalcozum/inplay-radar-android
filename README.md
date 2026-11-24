@@ -1,4 +1,3 @@
-# inplay-radar-android
 Inplay Radar Android uygulamasıdır
 
 Dikkat: Bu uygulama altyapısını https://inplayflux.com/ sitesinden almaktadır.
