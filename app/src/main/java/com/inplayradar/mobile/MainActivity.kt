@@ -829,7 +829,7 @@ class MainActivity : AppCompatActivity() {
             itemsContainer.addView(
                 row,
                 LinearLayout.LayoutParams(-1, rowHeight).apply {
-                    bottomMargin = if (label == menuDividerKey) dp(8) else dp(menuConfig.itemSpacing)
+                    bottomMargin = if (label == menuDividerKey) dp(4) else dp(menuConfig.itemSpacing)
                 }
             )
         }
@@ -905,7 +905,7 @@ class MainActivity : AppCompatActivity() {
                 menuRows[label]?.let { row ->
                     val rowHeight = if (label == menuDividerKey) dp(20) else dp(menuConfig.itemHeight)
                     itemsContainer.addView(row, LinearLayout.LayoutParams(-1, rowHeight).apply {
-                        bottomMargin = if (label == menuDividerKey) dp(8) else dp(menuConfig.itemSpacing)
+                        bottomMargin = if (label == menuDividerKey) dp(4) else dp(menuConfig.itemSpacing)
                     })
                 }
             }
