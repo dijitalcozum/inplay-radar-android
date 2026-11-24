@@ -1,11 +1,12 @@
-Dikkat: Bu uygulama altyapısını https://inplayflux.com/ sitesinden almaktadır.
+# inplay-radar-android
 
-Uygulamada herhangi bir bahis oynatılmamaktadır.
+**Inplay Radar**, Android için geliştirilmiş bir uygulamadır.
 
-Herhangi bir bahis şirketine yönlendirme yapılmamaktadır ve bahis reklamı yer almamaktadır.
+> **Önemli Bilgilendirme:** Bu uygulama altyapısını [https://inplayflux.com/](https://inplayflux.com/) adresinden almaktadır.
 
-Uygulama sadece https://inplayflux.com/ sitesini daha rahat kullanabilmeniz için tasarlanmıştır.
-
-Siteden hiçbir şekilde veri çekilmemiş veya kodları alınmamıştır, uygulama WebView yöntemi ile çalışmaktadır.
+* Uygulamada **hiçbir şekilde bahis oynatılmamaktadır**.
+* Herhangi bir bahis şirketine yönlendirme yapılmamakta ve **bahis reklamı yer almamaktadır**.
+* Uygulama yalnızca [https://inplayflux.com/](https://inplayflux.com/) sitesini daha rahat kullanabilmeniz için tasarlanmıştır.
+* Siteden hiçbir şekilde veri çekilmemiş veya kaynak kodları alınmamıştır; uygulama **WebView** yöntemi ile çalışmaktadır.
 
 Kamuoyuna saygıyla duyurulur.
