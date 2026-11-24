@@ -1,5 +1,3 @@
-Inplay Radar Android uygulamasıdır
-
 Dikkat: Bu uygulama altyapısını https://inplayflux.com/ sitesinden almaktadır.
 
 Uygulamada herhangi bir bahis oynatılmamaktadır.
